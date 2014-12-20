@@ -1,0 +1,94 @@
+[;; neuron config (conductance)
+ {:db/id #db/id[:db.part/db]
+  :db/ident :neuron/cm
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/value
+  :db/doc "Capacitance of the neuron."
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :neuron/tau_m
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/value
+  :db/doc "Membrane constant of the neuron."
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :neuron/e_rev_E
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/value
+  :db/doc "Exc. reverse potential of the neuron."
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :neuron/e_rev_I
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/value
+  :db/doc "Inh. reverse potential of the neuron."
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :neuron/v_thresh
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/value
+  :db/doc "Threshold potential of the neuron."
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :neuron/v_thresh
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/value
+  :db/doc "Threshold potential of the neuron."
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :neuron/tau_syn_E
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/value
+  :db/doc "Exc. time constant of the neuron."
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :neuron/tau_syn_I
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/value
+  :db/doc "Inh. time constant of the neuron."
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :neuron/v_reset
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/value
+  :db/doc "Reset potential of the neuron."
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :neuron/v_rest
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/value
+  :db/doc "Resting potential of the neuron."
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :neuron/v_rest
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/value
+  :db/doc "Resting potential of the neuron."
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :neuron/tau_refrac
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/value
+  :db/doc "Refractory time constant the neuron."
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :neuron/i_offset
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db/unique :db.unique/value
+  :db/doc "Offset current of the neuron."
+  :db.install/_attribute :db.part/db}
+
+ ]
