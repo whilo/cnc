@@ -77,47 +77,69 @@
   :db/doc "Offset current of the neuron."
   :db.install/_attribute :db.part/db}
 
+ ;; calibration
+ {:db/id #db/id[:db.part/db]
+  :db/ident :calib/alpha
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db/doc "Alpha slope for sigmoid fit."
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :calib/v-p05
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db/doc "Offset for sigmoid fit."
+  :db.install/_attribute :db.part/db}
+
+ ;; repo refs
+ {:db/id #db/id[:db.part/db]
+  :db/ident :ref/neuron-params
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db/doc "Repository reference to neuron parameters."
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :ref/trans-params
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db/doc "Repository reference to transaction parameters."
+  :db.install/_attribute :db.part/db}
+
  ;; training args
  {:db/id #db/id[:db.part/db]
   :db/ident :train/epochs
   :db/valueType :db.type/long
   :db/cardinality :db.cardinality/one
-  :db/unique :db.unique/value
   :db/doc "Times to iterate over the training data."
   :db.install/_attribute :db.part/db}
  {:db/id #db/id[:db.part/db]
   :db/ident :train/dt
   :db/valueType :db.type/float
   :db/cardinality :db.cardinality/one
-  :db/unique :db.unique/value
   :db/doc "Time resolution for simulator."
   :db.install/_attribute :db.part/db}
  {:db/id #db/id[:db.part/db]
   :db/ident :train/phase_duration
   :db/valueType :db.type/float
   :db/cardinality :db.cardinality/one
-  :db/unique :db.unique/value
   :db/doc "Phase duration in simulator."
   :db.install/_attribute :db.part/db}
  {:db/id #db/id[:db.part/db]
   :db/ident :train/learning_rate
   :db/valueType :db.type/float
   :db/cardinality :db.cardinality/one
-  :db/unique :db.unique/value
   :db/doc "Starting learning rate."
   :db.install/_attribute :db.part/db}
  {:db/id #db/id[:db.part/db]
   :db/ident :train/stdp_burnin
   :db/valueType :db.type/float
   :db/cardinality :db.cardinality/one
-  :db/unique :db.unique/value
   :db/doc "STDP burnin pauses."
   :db.install/_attribute :db.part/db}
  {:db/id #db/id[:db.part/db]
   :db/ident :train/data.h5
   :db/valueType :db.type/string
   :db/cardinality :db.cardinality/one
-  :db/unique :db.unique/value
   :db/doc "HDF5 data file of training samples."
   :db.install/_attribute :db.part/db}
 
