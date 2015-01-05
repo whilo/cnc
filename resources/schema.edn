@@ -91,7 +91,34 @@
   :db/doc "Offset for sigmoid fit."
   :db.install/_attribute :db.part/db}
 
+ ;; sampling
+ {:db/id #db/id[:db.part/db]
+  :db/ident :sampling/count
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :sampling/seed
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
  ;; repo refs
+ {:db/id #db/id[:db.part/db]
+  :db/ident :ref/rbm-weights
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :ref/rbm-v-bias
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :ref/rbm-h-bias
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
  {:db/id #db/id[:db.part/db]
   :db/ident :ref/neuron-params
   :db/valueType :db.type/uuid
