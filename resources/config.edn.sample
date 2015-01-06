@@ -1,0 +1,8 @@
+{:store "repo/store"
+ :peer "ws://127.0.0.1:31744"
+ :user "weilbach@dopamine.kip"
+ :repo  #uuid "112eca5f-8783-4358-aa9b-ebefc249561e"
+ :subs {"weilbach@dopamine.kip"
+        {#uuid "112eca5f-8783-4358-aa9b-ebefc249561e" #{"calibrate"
+                                                        "master"
+                                                        "train small rbms"}}}}

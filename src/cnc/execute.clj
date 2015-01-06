@@ -30,3 +30,7 @@
             :output output}
            (when git-id
              {:git-commit-id git-id}))))
+
+
+(comment
+  (sh "hostname"))

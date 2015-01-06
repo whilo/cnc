@@ -14,28 +14,29 @@
             [datomic.api :as d] ;; to read schema file id literals
             ))
 
-(def store (<!? (new-fs-store "repo/store")))
+(def config (atom (read-string (slurp "resources/config.edn"))))
 
-(def peer (server-peer (create-http-kit-handler! "ws://127.0.0.1:31744")
+(def store (<!? (new-fs-store (:store @config))))
+
+(def peer (server-peer (create-http-kit-handler! (:peer @config))
                        store
                        (comp (partial fetch store)
                              ensure-hash
                              (partial publish-on-request store))))
 
-(def stage (<!? (s/create-stage! "weilbach@dopamine.kip" peer eval)))
+(def stage (<!? (s/create-stage! (:user @config) peer eval)))
 
-(def repo-id #uuid "112eca5f-8783-4358-aa9b-ebefc249561e")
+(def repo-id (:repo @config))
 
-(<!? (s/subscribe-repos! stage {"weilbach@dopamine.kip"
-                                {repo-id #{"calibrate"
-                                           "master"
-                                           "train small rbms"}}}))
+(<!? (s/subscribe-repos! stage (:subs @config)))
 
 (start peer)
 
 
 
 (comment
+
+  (<!? (s/connect! stage "ws://127.0.0.1:31744"))
   ;; initialization steps
   (def new-id (<!? (s/create-repo! stage "ev-cd experiments.")))
 
