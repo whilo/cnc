@@ -126,7 +126,7 @@
   :db/doc "Repository reference to transaction parameters."
   :db.install/_attribute :db.part/db}
  {:db/id #db/id[:db.part/db]
-  :db/ident :source/id
+  :db/ident :git/commit-id
   :db/valueType :db.type/uuid
   :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}

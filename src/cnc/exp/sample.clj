@@ -1,10 +1,7 @@
 (ns cnc.exp.sample
   (:require [cnc.execute :refer [run-experiment!]]
-            [boltzmann.core :refer [sample-gibbs]]
-            [boltzmann.theoretical :refer [create-theoretical-rbm]]
+            [cnc.eval-map :refer [find-fn]]
             [geschichte.stage :as s]
-            [clojure.core.matrix :as mat]
-            [clj-hdf5.core :as hdf5]
             [clojure.java.io :as io]
             [taoensso.timbre :as timber]))
 
@@ -16,27 +13,14 @@
 (defn gather-sampling! [base-directory _]
   (read-string (slurp (str base-directory "samples.edn"))))
 
-(def base-dir (last *command-line-args*))
-
-(def exp-params (read-string (slurp (str base-dir "exp-params.edn"))))
-
-(let [{:keys [weights v-bias h-bias seed]} exp-params]
-  (def rbm (create-theoretical-rbm weights v-bias h-bias))
-
-  (def samples (mapv #(vec (take (count v-bias) %))
-                     (sample-gibbs rbm 10000 :seed seed))))
-
-(spit (str base-dir "samples.edn") samples)
-
 
 (comment
   (require '[cnc.repo :refer [stage repo-id]]
            '[geschichte.platform :refer [<!?]])
 
-  (:out (:process test-exp))
-  (:output test-exp)
 
-  (let [source-path "/usr/src/cnc/src/cnc/exp/sample.clj"]
+  (let [source-path #_"/wang/users/weilbach/cluster_home/cnc/src/cnc/exp/sample.clj"
+        "/usr/src/rbm-exps/src/rbm_exps/sample.clj"]
     (def test-exp
       (run-experiment! setup-sampling!
                        gather-sampling!
@@ -45,31 +29,21 @@
                         :v-bias [0.0 0.0 0.0]
                         :h-bias [0.0 0.0]
                         :seed 42
-                        :source (slurp source-path)
+                        :source-path source-path
                         :args ["lein-exec" "-p" source-path]})))
 
+  (<!? (-get-in store ["weilbach@dopamine.kip" repo-id :meta :branches "train small rbms"]))
 
-  (def sampling->datoms-val
-    '(fn sampling->datoms [conn params]
-       (let [id (uuid params)
-             {samples :output
-              {:keys [weights v-bias h-bias seed]} :exp-params}  params]
-         (db-transact conn [{:val/id (uuid samples)
-                             :sampling/count (count samples)
-                             :sampling/seed seed
-                             :ref/rbm-weights (uuid weights)
-                             :ref/rbm-v-bias (uuid v-bias)
-                             :ref/rbm-h-bias (uuid h-bias)
-                             :source/id (uuid source)
-                             :ref/trans-params id}])
-         conn)))
+  (<!? (s/branch! stage
+                  ["weilbach@dopamine.kip" repo-id]
+                  "train small rbms"
+                  (first (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "master"]))))
 
+  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
+                   (find-fn 'sampling->datoms)
+                   test-exp))
 
-  (<!? (s/transact stage ["whilo@dopamine.kip" repo-id "calibrate"]
-                   test-exp
-                   sampling->datoms-val))
-
-  (<!? (s/commit! stage {"whilo@dopamine.kip" {repo-id #{"calibrate"}}}))
+  (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train small rbms"}}}))
 
 
 

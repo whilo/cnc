@@ -1,17 +1,21 @@
 (ns cnc.analytics
   (:require [cnc.repo :refer [store stage repo-id]]
+            [cnc.eval-map :refer [eval-map mapped-eval]]
             [hasch.core :refer [uuid]]
             [geschichte.stage :as s]
             [geschichte.platform :refer [<!?]]
-            [datomic.api :as d]))
+            [datomic.api :as d]
+            [taoensso.timbre :as timber]))
 
-(defn db-transact [conn txs]
-  (d/transact conn (map #(assoc % :db/id (d/tempid :db.part/user))
-                        txs)))
+(timber/refer-timbre)
 
-(def conn (<!? (s/branch-value store eval (get-in @stage ["whilo@dopamine.kip" repo-id]) "calibrate")))
+
+(def conn (<!? (s/branch-value store mapped-eval
+                               (get-in @stage ["weilbach@dopamine.kip" repo-id]) "train small rbms")))
 
 (require '[konserve.protocols :refer [-get-in]])
+
+(clojure.pprint/pprint (seq (d/datoms (d/db conn) :eavt)))
 
 (defn load-key [id]
   (<!? (-get-in store [id])))
@@ -39,17 +43,23 @@
 
 (d/q '[:find ?tau-m
        :where
-       [?e :tau_m ?tau-m]]
+       [?e :neuron/tau_m ?tau-m]]
      (d/db conn))
 
 (comment
-  (def schema (read-string (slurp "resources/schema.edn")))
-
-  (d/delete-database "datomic:mem:///calibrationl-experiments")
+  (d/delete-database "datomic:mem:///ev-experiments")
 
   (clojure.pprint/pprint
    (<!? (s/commit-history-values store
-                                 (get-in @stage ["whilo@dopamine.kip" repo-id :meta :causal-order])
-                                 (first (get-in @stage ["whilo@dopamine.kip" repo-id :meta :branches "calibrate"]))
+                                 (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :causal-order])
+                                 (first (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "train small rbms"]))
                                  )))
+
+  (get-in @stage ["weilbach@dopamine.kip" repo-id :meta])
+
+  (<!? (s/pull! stage ["weilbach@dopamine.kip" repo-id "calibrate"]
+                "train small rbms" :allow-induced-conflict? true))
+
+  (<!? (s/merge! stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
+                 (seq (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "train small rbms"]))))
   )

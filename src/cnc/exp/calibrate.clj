@@ -1,5 +1,6 @@
 (ns cnc.exp.calibrate
-  (:require [cnc.execute :refer [run-experiment!]]
+  (:require [cnc.eval-map :refer [find-fn]]
+            [cnc.execute :refer [run-experiment!]]
             [cnc.repo :refer [stage repo-id]]
             [geschichte.stage :as s]
             [geschichte.platform :refer [<!?]]
@@ -39,39 +40,17 @@
         (run-experiment! setup-calibration!
                          gather-calibration!
                          {:neuron-params neuron-params
-                          :source (slurp source-path)
+                          :source-path source-path
                           :args ["python" source-path]}))))
 
-  (def calibration->datoms-val
-    '(fn calibration->datoms [conn params]
-       (let [id (uuid params)
-             {{{v_rest_min :V_rest_min
-                {alpha :alpha
-                 v_p05 :v_p05} :fit} :calibration
-                 neuron-params :neuron_parameters
-                 source :source} :output} params]
-         (db-transact conn [{:val/id (uuid (:output params))
-                             :source/id (uuid source)
-                             :calib/alpha alpha
-                             :calib/v-p05 v_p05
-                             :ref/neuron-params (uuid (dissoc neuron-params :_type :pynn_model))
-                             :ref/trans-params id}])
-         conn)))
-
-  (<!? (s/transact stage ["whilo@dopamine.kip" repo-id "calibrate"]
-                   neuron-params
-                   '(fn add-neuron-params [conn params]
-                      (let [namespaced (->> params
-                                            (map (fn [[k v]]
-                                                   [(keyword "neuron" (name k)) v]))
-                                            (into {}))]
-                        (db-transact conn [(assoc namespaced :val/id (uuid params))]))
-                      conn)))
+  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "calibrate"]
+                   (find-fn 'add-neuron-params)
+                   neuron-params))
 
 
 
-  (<!? (s/transact stage ["whilo@dopamine.kip" repo-id "calibrate"]
-                   test-exp
-                   calibration->datoms-val))
+  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "calibrate"]
+                   (find-fn 'calibration->datoms)
+                   test-exp))
 
-  (<!? (s/commit! stage {"whilo@dopamine.kip" {repo-id #{"calibrate"}}})))
+  (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"calibrate"}}})))

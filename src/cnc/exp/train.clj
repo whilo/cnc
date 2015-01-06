@@ -62,32 +62,15 @@
                           :training-params training-params
                           :calibration-id #uuid "050da733-dff1-5f53-b6d4-11aedfbbada2"
                           :data-id #uuid "00dc768e-cc2d-5e7c-8a39-50011f5ecf38"
-                          :source (slurp source-path)
+                          :source-path source-path
                           :args ["python" source-path]}))))
 
   (clojure.pprint/pprint test-exp)
 
-
-  (def train-ev-cd->datoms-val
-    '(fn train-ev-cd->datoms [conn params]
-       (let [id (uuid params)
-             {{{v_rest_min :V_rest_min
-                {alpha :alpha
-                 v_p05 :v_p05} :fit} :calibration
-                 neuron-params :neuron_parameters
-                 source :source} :output} params]
-         (db-transact conn [{:val/id (uuid (:output params))
-                             :source/id (uuid source)
-                             :calib/alpha alpha
-                             :calib/v-p05 v_p05
-                             :ref/neuron-params (uuid (dissoc neuron-params :_type :pynn_model))
-                             :ref/trans-params id}])
-         conn)))
-
   (def hist
     (<!? (s/commit-history-values store
-                                  (get-in @stage ["whilo@dopamine.kip" repo-id :meta :causal-order])
-                                  (first (get-in @stage ["whilo@dopamine.kip" repo-id :meta :branches "calibrate"])))))
+                                  (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :causal-order])
+                                  (first (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "calibrate"])))))
 
   (first (:transactions (second hist)))
   (uuid (-> hist second :transactions second first))

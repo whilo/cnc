@@ -1,23 +1,17 @@
 # cnc
 
-A Clojure library designed to ... well, that part is up to you.
+Orchestrating simulations on a cluster with versioned data.
 
 ## Usage
 
-https://github.com/clojure-numerics/clj-hdf5
+This is intended to be a REPL command and control interface.
 
-https://wiki-bsse.ethz.ch/display/JHDF5/Download+Page
-
-mvn deploy:deploy-file -DgroupId=cisd -DartifactId=jhdf5 \
--Dversion=13.06.2 -Dpackaging=jar \
--Dfile=/path/to/cisd-jhdf5-batteries_included_lin_win_mac_sol.jar \
--Durl=file:repo
-
-FIXME
+## TODO
+- find proper way to express eval mapping into current codebase
 
 ## License
 
-Copyright © 2014 FIXME
+Copyright © 2014-2015 Christian Weilbach
 
 Distributed under the Eclipse Public License either version 1.0 or (at
 your option) any later version.
