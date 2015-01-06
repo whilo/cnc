@@ -14,7 +14,9 @@
                  [cheshire "5.4.0"]
                  [net.polyc0l0r/boltzmann "0.1.1"]
                  [gg4clj "0.1.0"]
+                 [org.clojure/tools.nrepl "0.2.5"]
+                 [com.taoensso/nippy "2.7.1"]
 
                  [net.polyc0l0r/geschichte "0.1.0-SNAPSHOT" :exclusions [org.clojure/clojure] ]]
   :plugins [[lein-gorilla "0.3.4"]]
-  :repl-options {:port 52815})
+  :main cnc.core)

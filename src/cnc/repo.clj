@@ -14,27 +14,35 @@
             [datomic.api :as d] ;; to read schema file id literals
             ))
 
-(def config (atom (read-string (slurp "resources/config.edn"))))
 
-(def store (<!? (new-fs-store (:store @config))))
+(defn init-repo [config]
+  (let [{:keys [user repo branches store remote peer]} config
+        store (<!? (new-fs-store store))
+        peer (server-peer (create-http-kit-handler! peer) ;; TODO client-peer?
+                                store
+                                (comp (partial fetch store)
+                                      ensure-hash
+                                      (partial publish-on-request store)))
+        stage (<!? (s/create-stage! user peer eval))
+        res {:store store
+             :peer peer
+             :stage stage
+             :id repo}]
+    (when-not (= peer :client)
+      (start peer))
 
-(def peer (server-peer (create-http-kit-handler! (:peer @config))
-                       store
-                       (comp (partial fetch store)
-                             ensure-hash
-                             (partial publish-on-request store))))
+    (when remote
+      (<!? (s/connect! stage remote)))
 
-(def stage (<!? (s/create-stage! (:user @config) peer eval)))
-
-(def repo-id (:repo @config))
-
-(<!? (s/subscribe-repos! stage (:subs @config)))
-
-(start peer)
-
+    (when repo
+      (<!? (s/subscribe-repos! stage {user {repo branches}})))
+    res))
 
 
 (comment
+  (require '[cnc.core :refer [state]])
+  (def stage (get-in @state [:repo :stage]))
+  (clojure.pprint/pprint @stage)
 
   (<!? (s/connect! stage "ws://127.0.0.1:31744"))
   ;; initialization steps
@@ -56,9 +64,9 @@
 
 
   (<!? (s/branch! stage
-                  ["weilbach@dopamine.kip" repo-id]
-                  "calibrate"
-                  (first (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "master"]))))
+                  ["weilbach@dopamine.kip" new-id]
+                  "train small rbms"
+                  (first (get-in @stage ["weilbach@dopamine.kip" new-id :meta :branches "master"]))))
 
 
 

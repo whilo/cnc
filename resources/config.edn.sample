@@ -1,8 +1,7 @@
 {:store "repo/store"
  :peer "ws://127.0.0.1:31744"
+; remote "ws://127.0.0.1:31744"
  :user "weilbach@dopamine.kip"
- :repo  #uuid "112eca5f-8783-4358-aa9b-ebefc249561e"
- :subs {"weilbach@dopamine.kip"
-        {#uuid "112eca5f-8783-4358-aa9b-ebefc249561e" #{"calibrate"
-                                                        "master"
-                                                        "train small rbms"}}}}
+ :repo #uuid "79459521-78ad-44ac-98ba-aa230b259b69"
+ :branches #{"calibrate" "master" "train small rbms"}
+ :nrepl-port 47382}
