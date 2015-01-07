@@ -52,6 +52,12 @@
 
 
 (comment
+  (require '[cnc.core :refer [state]]
+           '[konserve.protocols :refer [-get-in]]
+           '[geschichte.platform :refer [<!?]])
+  (def stage2 (get-in @state [:repo :stage]))
+  (def store (get-in @state [:repo :store]))
+  (def repo-id (get-in @state [:repo :id]))
 
   (future
     (let [source-path "/home/void/Dokumente/Studium/Informatik/brainz/stdp/model-nmsampling/code/ev_cd/stdp.py"]
@@ -60,12 +66,17 @@
                          gather-training!
                          {:neuron-params neuron-params
                           :training-params training-params
-                          :calibration-id #uuid "050da733-dff1-5f53-b6d4-11aedfbbada2"
-                          :data-id #uuid "00dc768e-cc2d-5e7c-8a39-50011f5ecf38"
+                          :calibration-id #uuid "1070c715-96af-5a38-856f-0ef985bda116"
+                          :data-id #uuid "12515c62-4bc6-5804-a870-84c7bee1b85f"
                           :source-path source-path
                           :args ["python" source-path]}))))
 
-  (clojure.pprint/pprint test-exp)
+  (clojure.pprint/pprint (dissoc test-exp :process))
+
+  (println (-> test-exp
+               :process
+               :err
+               ))
 
   (def hist
     (<!? (s/commit-history-values store
