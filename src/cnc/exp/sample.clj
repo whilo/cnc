@@ -15,8 +15,12 @@
 
 
 (comment
-  (require '[cnc.repo :refer [stage repo-id]]
+  (require '[cnc.core :refer [state]]
+           '[konserve.protocols :refer [-get-in]]
            '[geschichte.platform :refer [<!?]])
+  (def stage2 (get-in @state [:repo :stage]))
+  (def store (get-in @state [:repo :store]))
+  (def repo-id (get-in @state [:repo :id]))
 
 
   (let [source-path #_"/wang/users/weilbach/cluster_home/cnc/src/cnc/exp/sample.clj"
@@ -32,7 +36,7 @@
                         :source-path source-path
                         :args ["lein-exec" "-p" source-path]})))
 
-  (<!? (-get-in store ["weilbach@dopamine.kip" repo-id :meta :branches "train small rbms"]))
+  (<!? (-get-in store ["weilbach@dopamine.kip" repo-id :branches "train small rbms"]))
 
   (<!? (s/branch! stage
                   ["weilbach@dopamine.kip" repo-id]

@@ -1,7 +1,6 @@
 (ns cnc.exp.calibrate
   (:require [cnc.eval-map :refer [find-fn]]
             [cnc.execute :refer [run-experiment!]]
-            [cnc.repo :refer [stage repo-id]]
             [geschichte.stage :as s]
             [geschichte.platform :refer [<!?]]
             [hasch.core :refer [uuid]]
@@ -34,6 +33,13 @@
                     :i_offset   0.})
 
 (comment
+  (require '[cnc.core :refer [state]]
+           '[konserve.protocols :refer [-get-in]]
+           '[geschichte.platform :refer [<!?]])
+  (def stage (get-in @state [:repo :stage]))
+  (def store (get-in @state [:repo :store]))
+  (def repo-id (get-in @state [:repo :id]))
+
   (future
     (let [source-path "/home/void/Dokumente/Studium/Informatik/brainz/stdp/model-nmsampling/code/ev_cd/calibrate.py"]
       (def test-exp

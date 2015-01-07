@@ -60,9 +60,6 @@
   (<!? (s/commit! stage {"weilbach@dopamine.kip" {new-id #{"master"}}}))
 
 
-
-
-
   (<!? (s/branch! stage
                   ["weilbach@dopamine.kip" new-id]
                   "train small rbms"
