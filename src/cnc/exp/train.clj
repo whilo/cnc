@@ -60,7 +60,7 @@
   (def repo-id (get-in @state [:repo :id]))
 
   (future
-    (let [source-path "/home/void/Dokumente/Studium/Informatik/brainz/stdp/model-nmsampling/code/ev_cd/stdp.py"]
+    (let [source-path (str (get-in @state [:config :source-base-path])) "/model-nmsampling/code/ev_cd/stdp.py"]
       (def test-exp
         (run-experiment! setup-training!
                          gather-training!
