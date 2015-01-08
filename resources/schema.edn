@@ -117,17 +117,32 @@
   :db/ident :ref/neuron-params
   :db/valueType :db.type/uuid
   :db/cardinality :db.cardinality/one
-  :db/doc "Repository reference to neuron parameters."
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :ref/training-params
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}
  {:db/id #db/id[:db.part/db]
   :db/ident :ref/trans-params
   :db/valueType :db.type/uuid
   :db/cardinality :db.cardinality/one
-  :db/doc "Repository reference to transaction parameters."
   :db.install/_attribute :db.part/db}
  {:db/id #db/id[:db.part/db]
   :db/ident :git/commit-id
   :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
+  :db/ident :ref/data
+  :db/valueType :db.type/uuid
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+
+ ;; data sets
+ {:db/id #db/id[:db.part/db]
+  :db/ident :data/name
+  :db/valueType :db.type/string
   :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}
 
@@ -162,11 +177,6 @@
   :db/cardinality :db.cardinality/one
   :db/doc "STDP burnin pauses."
   :db.install/_attribute :db.part/db}
- {:db/id #db/id[:db.part/db]
-  :db/ident :train/data.h5
-  :db/valueType :db.type/string
-  :db/cardinality :db.cardinality/one
-  :db/doc "HDF5 data file of training samples."
-  :db.install/_attribute :db.part/db}
+
 
  ]

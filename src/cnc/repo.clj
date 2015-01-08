@@ -4,7 +4,7 @@
             [konserve.store :refer [new-mem-store]]
             [konserve.filestore :refer [new-fs-store]]
             [konserve.protocols :refer [-get-in -assoc-in]]
-            [geschichte.sync :refer [server-peer]]
+            [geschichte.sync :refer [server-peer client-peer]]
             [geschichte.stage :as s]
             [geschichte.p2p.fetch :refer [fetch]]
             [geschichte.p2p.hash :refer [ensure-hash]]
@@ -18,18 +18,24 @@
 (defn init-repo [config]
   (let [{:keys [user repo branches store remote peer]} config
         store (<!? (new-fs-store store))
-        peer (server-peer (create-http-kit-handler! peer) ;; TODO client-peer?
-                                store
-                                (comp (partial fetch store)
-                                      ensure-hash
-                                      (partial publish-on-request store)))
-        stage (<!? (s/create-stage! user peer eval))
+        peer-server (server-peer (create-http-kit-handler! peer) ;; TODO client-peer?
+                                 store
+                                 (comp (partial fetch store)
+                                       ensure-hash
+                                       (partial publish-on-request store)))
+        #_(client-peer "benjamin"
+                       store
+                       (comp (partial fetch store)
+                             ensure-hash
+                             (partial publish-on-request store)))
+        stage (<!? (s/create-stage! user peer-server eval))
         res {:store store
-             :peer peer
+             :peer peer-server
              :stage stage
              :id repo}]
+
     (when-not (= peer :client)
-      (start peer))
+      (start peer-server))
 
     (when remote
       (<!? (s/connect! stage remote)))
@@ -58,6 +64,7 @@
                          read-string)]]))
 
   (<!? (s/commit! stage {"weilbach@dopamine.kip" {new-id #{"master"}}}))
+
 
 
   (<!? (s/branch! stage

@@ -11,20 +11,20 @@
   (spit (str base-directory "exp-params.edn") exp-params))
 
 (defn gather-sampling! [base-directory _]
-  (read-string (slurp (str base-directory "samples.edn"))))
+  {:output (read-string (slurp (str base-directory "samples.edn")))})
 
 
 (comment
   (require '[cnc.core :refer [state]]
            '[konserve.protocols :refer [-get-in]]
-           '[geschichte.platform :refer [<!?]])
+           '[geschichte.platform :refer [<!?]]
+           '[hasch.core :refer [uuid]])
   (def stage2 (get-in @state [:repo :stage]))
   (def store (get-in @state [:repo :store]))
   (def repo-id (get-in @state [:repo :id]))
 
 
-  (let [source-path #_"/wang/users/weilbach/cluster_home/cnc/src/cnc/exp/sample.clj"
-        "/usr/src/rbm-exps/src/rbm_exps/sample.clj"]
+  (let [source-path "/wang/users/weilbach/cluster_home/rbm-exps/src/rbm_exps/sample.clj"]
     (def test-exp
       (run-experiment! setup-sampling!
                        gather-sampling!
@@ -34,7 +34,9 @@
                         :h-bias [0.0 0.0]
                         :seed 42
                         :source-path source-path
-                        :args ["lein-exec" "-p" source-path]})))
+                        :args ["srun" "lein-exec" "-p" source-path]})))
+
+
 
   (<!? (-get-in store ["weilbach@dopamine.kip" repo-id :branches "train small rbms"]))
 

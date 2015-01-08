@@ -6,6 +6,13 @@
 
 (timber/refer-timbre)
 
+(defn slurp-bytes
+  "Slurp the bytes from a slurpable thing"
+  [x]
+  (with-open [out (java.io.ByteArrayOutputStream.)]
+    (clojure.java.io/copy (clojure.java.io/input-stream x) out)
+    (.toByteArray out)))
+
 (defn git-commit [file-name]
   (let [f (io/file file-name)
         dir (if (.isDirectory f)
@@ -23,11 +30,12 @@
         _ (.mkdir (io/file base-directory))
         _ (pre-proc-fn base-directory exp-params)
         proc (apply sh (concat args [base-directory] [:dir base-directory]))
-        output (post-proc-fn base-directory exp-params)]
-    (merge {:exp-params exp-params
+        output (post-proc-fn base-directory exp-params)
+        _ (debug "finished experiment in: " base-directory)]
+    (merge output
+           {:exp-params exp-params
             :base-directory base-directory
-            :process proc
-            :output output}
+            :process proc}
            (when git-id
              {:git-commit-id git-id}))))
 

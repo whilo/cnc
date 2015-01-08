@@ -65,43 +65,31 @@
                            :ref/trans-params id}])
        conn))
 
-   '(fn calibration->datoms [conn params]
+   '(fn data->datoms [conn params]
       (let [id (uuid params)
-            {{{v_rest_min :V_rest_min
-               {alpha :alpha
-                v_p05 :v_p05} :fit} :calibration
-                neuron-params :neuron_parameters
-                ;; FIX: git-commit-id is in params
-                git-id :git-commit-id} :output} params]
-        (db-transact conn [{:val/id (uuid (:output params))
-                            :git/commit-id git-id
-                            :calib/alpha alpha
-                            :calib/v-p05 v_p05
-                            :ref/neuron-params (uuid (dissoc neuron-params :_type :pynn_model))
+            {data :output
+             name :name}  params]
+        (db-transact conn [{:val/id (uuid data)
+                            :data/name name
                             :ref/trans-params id}])
         conn))
 
    (fn [conn params]
      (let [id (uuid params)
-           {{{v_rest_min :V_rest_min
-              {alpha :alpha
-               v_p05 :v_p05} :fit} :calibration
-               neuron-params :neuron_parameters} :output
-               git-id :git-commit-id} params]
-       (db-transact conn [{:val/id (uuid (:output params))
-                           :git/commit-id git-id
-                           :calib/alpha alpha
-                           :calib/v-p05 v_p05
-                           :ref/neuron-params (uuid (dissoc neuron-params :_type :pynn_model))
+           {data :output
+            name :name} params]
+       (db-transact conn [{:val/id (uuid data)
+                           :data/name name
                            :ref/trans-params id}])
        conn))
+
 
    '(fn calibration->datoms [conn params]
       (let [id (uuid params)
             {{{v_rest_min :V_rest_min
                {alpha :alpha
-                v_p05 :v_p05} :fit} :calibration
-                neuron-params :neuron_parameters} :output
+                v_p05 :v_p05} :fit} :calibration} :output
+                {neuron-params :neuron-params} :exp-params
                 git-id :git-commit-id} params]
         (db-transact conn [{:val/id (uuid (:output params))
                             :git/commit-id git-id
@@ -115,8 +103,8 @@
      (let [id (uuid params)
            {{{v_rest_min :V_rest_min
               {alpha :alpha
-               v_p05 :v_p05} :fit} :calibration
-               neuron-params :neuron_parameters} :output
+               v_p05 :v_p05} :fit} :calibration} :output
+               {neuron-params :neuron-params} :exp-params
                git-id :git-commit-id} params]
        (db-transact conn [{:val/id (uuid (:output params))
                            :git/commit-id git-id
@@ -125,6 +113,38 @@
                            :ref/neuron-params (uuid (dissoc neuron-params :_type :pynn_model))
                            :ref/trans-params id}])
        conn))
+
+   '(fn calibration->datoms [conn params]
+      (let [id (uuid params)
+            {{{v_rest_min :V_rest_min
+               {alpha :alpha
+                v_p05 :v_p05} :fit} :calibration
+                ;; FIX: git-commit-id in params and neuron-parameters is in exp-params
+                neuron-params :neuron_parameters
+                git-id :git-commit-id} :output} params]
+        (db-transact conn [{:val/id (uuid (:output params))
+                            :git/commit-id git-id
+                            :calib/alpha alpha
+                            :calib/v-p05 v_p05
+                            :ref/neuron-params (uuid (dissoc neuron-params :_type :pynn_model))
+                            :ref/trans-params id}])
+        conn))
+
+   (fn [conn params]
+     (let [id (uuid params)
+           {{{v_rest_min :V_rest_min
+              {alpha :alpha
+               v_p05 :v_p05} :fit} :calibration} :output
+               {neuron-params :neuron-params} :exp-params
+               git-id :git-commit-id} params]
+       (db-transact conn [{:val/id (uuid (:output params))
+                           :git/commit-id git-id
+                           :calib/alpha alpha
+                           :calib/v-p05 v_p05
+                           :ref/neuron-params (uuid (dissoc neuron-params :_type :pynn_model))
+                           :ref/trans-params id}])
+       conn))
+
 
    '(fn add-neuron-params [conn params]
       (let [namespaced (->> params
@@ -142,33 +162,47 @@
        (db-transact conn [(assoc namespaced :val/id (uuid params))]))
      conn)
 
+   '(fn add-training-params [conn params]
+      (let [namespaced (->> params
+                            (map (fn [[k v]]
+                                   [(keyword "train" (name k)) v]))
+                            (into {}))]
+        (db-transact conn [(assoc namespaced :val/id (uuid params))]))
+      conn)
+
+   (fn [conn params]
+     (let [namespaced (->> params
+                           (map (fn [[k v]]
+                                  [(keyword "train" (name k)) v]))
+                           (into {}))]
+       (db-transact conn [(assoc namespaced :val/id (uuid params))]))
+     conn)
+
    '(fn train-ev-cd->datoms [conn params]
       (let [id (uuid params)
-            {{{v_rest_min :V_rest_min
-               {alpha :alpha
-                v_p05 :v_p05} :fit} :calibration
-                neuron-params :neuron_parameters
-                source :source} :output} params]
+            {{neuron-params :neuron-params
+              training-params :training-params
+              data-id :data-id} :exp-params
+              git-id :git-commit-id} params]
         (db-transact conn [{:val/id (uuid (:output params))
-                            :source/id (uuid source)
-                            :calib/alpha alpha
-                            :calib/v-p05 v_p05
-                            :ref/neuron-params (uuid (dissoc neuron-params :_type :pynn_model))
+                            :git/commit-id git-id
+                            :ref/data data-id
+                            :ref/neuron-params (uuid neuron-params)
+                            :ref/training-params (uuid training-params)
                             :ref/trans-params id}])
         conn))
 
-   (fn [conn params]
+   (fn train-ev-cd->datoms [conn params]
      (let [id (uuid params)
-           {{{v_rest_min :V_rest_min
-              {alpha :alpha
-               v_p05 :v_p05} :fit} :calibration
-               neuron-params :neuron_parameters
-               source :source} :output} params]
+           {{neuron-params :neuron-params
+             training-params :training-params
+             data-id :data-id} :exp-params
+             git-id :git-commit-id} params]
        (db-transact conn [{:val/id (uuid (:output params))
-                           :source/id (uuid source)
-                           :calib/alpha alpha
-                           :calib/v-p05 v_p05
-                           :ref/neuron-params (uuid (dissoc neuron-params :_type :pynn_model))
+                           :git/commit-id git-id
+                           :ref/data data-id
+                           :ref/neuron-params (uuid neuron-params)
+                           :ref/training-params (uuid training-params)
                            :ref/trans-params id}])
        conn))})
 

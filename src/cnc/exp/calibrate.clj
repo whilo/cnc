@@ -17,8 +17,8 @@
     (json/generate-stream neuron-params w)))
 
 (defn gather-calibration! [base-directory _]
-  (with-open [r (io/reader (str base-directory "calibration.json"))]
-    (json/parse-stream r true)))
+  {:output (with-open [r (io/reader (str base-directory "calibration.json"))]
+             (json/parse-stream r true))})
 
 (def neuron-params {:cm         0.2,
                     :tau_m      1.,
@@ -39,9 +39,10 @@
   (def stage (get-in @state [:repo :stage]))
   (def store (get-in @state [:repo :store]))
   (def repo-id (get-in @state [:repo :id]))
+  (def source-base-path (get-in @state [:config :source-base-path]))
 
   (future
-    (let [source-path "/home/void/Dokumente/Studium/Informatik/brainz/stdp/model-nmsampling/code/ev_cd/calibrate.py"]
+    (let [source-path (str source-base-path "model-nmsampling/code/ev_cd/calibrate.py")]
       (def test-exp
         (run-experiment! setup-calibration!
                          gather-calibration!
