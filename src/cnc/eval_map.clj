@@ -12,8 +12,10 @@
 ;; scope for eval in this namespace
 
 (defn db-transact [conn txs]
-  (d/transact conn (map #(assoc % :db/id (d/tempid :db.part/user))
-                        txs)))
+  (debug "TRANSACT DATOMIC:"
+         @(d/transact conn (map #(assoc % :db/id (d/tempid :db.part/user))
+                                txs)))
+  conn)
 
 (def eval-map
   {'(fn create-db [old {:keys [name]}]
@@ -21,7 +23,7 @@
         (d/create-database uri)
         (d/connect uri)))
 
-   (fn [old {:keys [name]}]
+   (fn [old init]
      (let [uri (str "datomic:mem:///" name)]
        (d/create-database uri)
        (d/connect uri)))
@@ -30,8 +32,8 @@
       (d/transact conn schema)
       conn)
 
-   (fn [conn schema]
-     (d/transact conn schema)
+   (fn [conn schema] ;; HACK to initialize datomic with the final schema
+     (d/transact conn (-> "resources/schema.edn" slurp read-string))
      conn)
 
 
@@ -173,7 +175,10 @@
    (fn [conn params]
      (let [namespaced (->> params
                            (map (fn [[k v]]
-                                  [(keyword "train" (name k)) v]))
+                                  [(keyword "train" (name k))
+                                   (cond (= k :weight_recording_interval)
+                                         (float v)
+                                         :else v)]))
                            (into {}))]
        (db-transact conn [(assoc namespaced :val/id (uuid params))]))
      conn)
@@ -192,7 +197,7 @@
                             :ref/trans-params id}])
         conn))
 
-   (fn train-ev-cd->datoms [conn params]
+   (fn [conn params]
      (let [id (uuid params)
            {{neuron-params :neuron-params
              training-params :training-params

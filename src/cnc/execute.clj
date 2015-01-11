@@ -24,7 +24,7 @@
          second)))
 
 (defn run-experiment! [pre-proc-fn post-proc-fn {:keys [args source-path] :as exp-params}]
-  (let [base-directory (str "experiments/" (uuid) "/")
+  (let [base-directory (str "experiments/" (java.util.Date.) "_" (subs (str (uuid)) 0 8) "/")
         git-id (git-commit source-path)
         _ (debug "starting experiment in: " base-directory)
         _ (.mkdir (io/file base-directory))

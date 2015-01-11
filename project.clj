@@ -4,7 +4,7 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 ;; TODO remove, wrong dependencie order?
+                 ;; TODO remove, wrong dependency order?
                  [clatrix "0.4.0"]
                  [net.mikera/core.matrix "0.32.1"]
  	         [com.datomic/datomic-free "0.9.4899"]
@@ -14,12 +14,11 @@
                  [net.polyc0l0r/boltzmann "0.1.1"]
                  [com.taoensso/nippy "2.7.1"]
                  [com.taoensso/timbre "3.3.1"]
-                 [gorilla-repl "0.3.4"]
-                 #_[gg4clj "0.1.0"]
+                 [gorilla-repl "0.3.4" :exclusions [http-kit]]
+                 [gg4clj "0.1.0"]
 
                  [net.polyc0l0r/hasch "0.2.3"]
                  [net.polyc0l0r/konserve "0.2.3-SNAPSHOT"]
-                 [net.polyc0l0r/geschichte "0.1.0-SNAPSHOT" :exclusions [org.clojure/clojure http-kit]]]
-  :plugins [[lein-gorilla "0.3.4"]]
+                 [net.polyc0l0r/geschichte "0.1.0-SNAPSHOT" :exclusions [org.clojure/clojure]]]
   :jvm-opts ["-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n"]
   :main cnc.core)

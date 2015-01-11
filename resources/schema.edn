@@ -130,7 +130,7 @@
   :db.install/_attribute :db.part/db}
  {:db/id #db/id[:db.part/db]
   :db/ident :git/commit-id
-  :db/valueType :db.type/uuid
+  :db/valueType :db.type/string
   :db/cardinality :db.cardinality/one
   :db.install/_attribute :db.part/db}
  {:db/id #db/id[:db.part/db]
@@ -160,6 +160,11 @@
   :db/doc "Time resolution for simulator."
   :db.install/_attribute :db.part/db}
  {:db/id #db/id[:db.part/db]
+  :db/ident :train/burn_in_time
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
   :db/ident :train/phase_duration
   :db/valueType :db.type/float
   :db/cardinality :db.cardinality/one
@@ -172,11 +177,20 @@
   :db/doc "Starting learning rate."
   :db.install/_attribute :db.part/db}
  {:db/id #db/id[:db.part/db]
+  :db/ident :train/weight_recording_interval
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
   :db/ident :train/stdp_burnin
   :db/valueType :db.type/float
   :db/cardinality :db.cardinality/one
   :db/doc "STDP burnin pauses."
   :db.install/_attribute :db.part/db}
-
+ {:db/id #db/id[:db.part/db]
+  :db/ident :train/sampling_time
+  :db/valueType :db.type/float
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
 
  ]
