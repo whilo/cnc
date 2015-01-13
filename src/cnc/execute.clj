@@ -30,6 +30,10 @@
         _ (.mkdir (io/file base-directory))
         _ (pre-proc-fn base-directory exp-params)
         proc (apply sh (concat args [base-directory] [:dir base-directory]))
+        _ (when-not (= (:exit proc) 0)
+            (throw (ex-info "Process execution failed."
+                            {:process proc
+                             :exp-params exp-params})))
         output (post-proc-fn base-directory exp-params)
         _ (debug "finished experiment in: " base-directory)]
     (merge output

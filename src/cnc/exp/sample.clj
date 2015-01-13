@@ -19,7 +19,7 @@
            '[konserve.protocols :refer [-get-in]]
            '[geschichte.platform :refer [<!?]]
            '[hasch.core :refer [uuid]])
-  (def stage2 (get-in @state [:repo :stage]))
+  (def stage (get-in @state [:repo :stage]))
   (def store (get-in @state [:repo :store]))
   (def repo-id (get-in @state [:repo :id]))
 
@@ -28,13 +28,15 @@
     (def test-exp
       (run-experiment! setup-sampling!
                        gather-sampling!
-                       {:weights [[0.5 -0.2 0.3]
-                                  [-0.2 -0.4 0.2]]
-                        :v-bias [0.0 0.0 0.0]
-                        :h-bias [0.0 0.0]
+                       {:weights [[0.5 -0.2 0.3 0.3]
+                                  [-0.2 -0.4 0.2 -0.1]
+                                  [0.1 0.3 0.6 0.2]]
+                        :v-bias [0.0 0.0 0.0 0.0]
+                        :h-bias [0.0 0.0 0.0]
                         :seed 42
                         :source-path source-path
                         :args ["srun" "lein-exec" "-p" source-path]})))
+
 
 
 

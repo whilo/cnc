@@ -33,15 +33,15 @@
                     "training_overview.png"
                     "weight_avgs.h5"
                     "weights_history.h5"]
-        blobs (map #(->> % (str base-directory) slurp-bytes)
-                   blob-names)]
+        blobs (doall (map #(->> % (str base-directory) slurp-bytes)
+                          blob-names))]
     {:output (into {} (map (fn [n b] [(keyword n)
                                      (uuid b)])
                            blob-names blobs))
      :new-blobs blobs}))
 
 
-(def training-params {:v_count 9
+(def training-params {:h_count 9
                       :epochs 1,
                       :dt 0.01,
                       :burn_in_time 0.,
@@ -72,23 +72,32 @@
   (def stage (get-in @state [:repo :stage]))
   (def store (get-in @state [:repo :store]))
   (def repo-id (get-in @state [:repo :id]))
-
   (future
     (let [source-path (str (get-in @state [:config :source-base-path]) "model-nmsampling/code/ev_cd/stdp.py")]
       (def test-exp
-        (run-experiment! (partial setup-training! store)
-                         gather-training!
-                         {:neuron-params neuron-params
-                          :training-params training-params
-                          :calibration-id #uuid "1070c715-96af-5a38-856f-0ef985bda116"
-                          :data-id #uuid "12515c62-4bc6-5804-a870-84c7bee1b85f"
-                          :source-path source-path
-                          :args ["srun" "python" source-path]}))))
+        (let [params {:neuron-params neuron-params
+                      :training-params {:h_count 12
+                                        :epochs 1,
+                                        :dt 0.01,
+                                        :burn_in_time 0.,
+                                        :phase_duration 100.0,
+                                        :learning_rate 1e-6,
+                                        :weight_recording_interval 100.0,
+                                        :stdp_burnin 10.0,
+                                        :sampling_time 1e6}
+                      :calibration-id #uuid "1070c715-96af-5a38-856f-0ef985bda116"
+                      :data-id #uuid "2e354ab2-5629-53f0-88d6-79e405f61217"
+                      :source-path source-path
+                      :args ["srun" "python" source-path]}]
+          (try
+            (run-experiment! (partial setup-training! store) gather-training! params)
+            (catch Exception e
+              e))))))
 
-  (clojure.pprint/pprint (dissoc test-exp :process :new-blobs))
+  (clojure.pprint/pprint #_(->> test-exp :process :err (take-last 1000) (apply str))
+                         (dissoc test-exp :process :new-blobs))
 
   (<!? (-get-in store [(uuid training-params)]))
-
 
   (doseq [b (:new-blobs test-exp)]
     (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train small rbms"] b)))
@@ -115,10 +124,6 @@
   (first (:transactions (second hist)))
   (uuid (-> hist second :transactions second first))
   (clojure.pprint/pprint hist)
-
-
-
-
 
   {:spike_trains.h5 #uuid "08a569bd-7797-5678-b134-70c2764b3dea",
    :weight_avgs.h5 #uuid "1b783d21-0621-5c10-a6c7-e6ff7f184ffe",
@@ -181,22 +186,40 @@
                     :name "5x5 digits 3,4,5"}))
 
 
-  (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train small rbms"}}}))
+  (do
+    (time (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train small rbms"}}})))
+    nil)
 
 
   (future
-    (let [source-path (str (get-in @state [:config :source-base-path]) "model-nmsampling/code/ev_cd/stdp.py")]
+    (let [source-path (str (get-in @state [:config :source-base-path]) "model-nmsampling/code/ev_cd/stdp.py")
+          training-params {:h_count 30
+                           :epochs 2000,
+                           :dt 0.1,
+                           :burn_in_time 0.,
+                           :phase_duration 100.0,
+                           :learning_rate 1e-6,
+                           :weight_recording_interval 1e4,
+                           :stdp_burnin 10.0,
+                           :sampling_time 1e6}]
       (def digit-exp
-        (run-experiment! (partial setup-training! store)
-                         gather-training!
-                         {:neuron-params neuron-params
-                          :training-params training-params
-                          :calibration-id #uuid "1070c715-96af-5a38-856f-0ef985bda116"
-                          :data-id #uuid "04501ad6-45f4-5880-a3ee-ce91c748f933"
-                          :source-path source-path
-                          :args ["srun" "python" source-path]}))))
+        (try
+          (run-experiment! (partial setup-training! store)
+                           gather-training!
+                           {:neuron-params neuron-params
+                            :training-params training-params
+                            :calibration-id #uuid "1070c715-96af-5a38-856f-0ef985bda116"
+                            :data-id #uuid "04501ad6-45f4-5880-a3ee-ce91c748f933"
+                            :source-path source-path
+                            :args ["srun" "python" source-path]})
+          (catch Exception e
+            e)))))
 
   (<!? (-get-in store [#uuid "04501ad6-45f4-5880-a3ee-ce91c748f933"]))
 
-  (clojure.pprint/pprint (-> digit-exp (dissoc :process)))
+  (clojure.pprint/pprint (-> digit-exp #_(dissoc :process)))
+
+
+
+
   )
