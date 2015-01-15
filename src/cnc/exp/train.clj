@@ -89,15 +89,65 @@
                       :data-id #uuid "2e354ab2-5629-53f0-88d6-79e405f61217"
                       :source-path source-path
                       :args ["srun" "python" source-path]}]
+          (merge (gather-training! "experiments/Mon Jan 12 22:34:47 CET 2015_9a8e8f96/" nil)
+                 {:exp-params params
+                  :base-directory "experiments/Mon Jan 12 22:34:47 CET 2015_9a8e8f96/"
+                  :git-commit-id "f9a3077b68b43a0a269d922de18d7f411dbed751"})
+          #_(try
+              (run-experiment! (partial setup-training! store) gather-training! params)
+              (catch Exception e
+                e))))))
+
+  (future
+    (let [source-path (str (get-in @state [:config :source-base-path]) "model-nmsampling/code/ev_cd/stdp.py")]
+      (def unsymmetric-exp
+        (let [params {:neuron-params neuron-params
+                      :training-params {:h_count 5
+                                        :epochs 1,
+                                        :dt 0.01,
+                                        :burn_in_time 0.,
+                                        :phase_duration 100.0,
+                                        :learning_rate 1e-5,
+                                        :weight_recording_interval 100.0,
+                                        :stdp_burnin 10.0,
+                                        :sampling_time 1e6}
+                      :calibration-id #uuid "1070c715-96af-5a38-856f-0ef985bda116"
+                      :data-id #uuid "25d4dfa7-3c11-559a-9aa3-618a5258a911"
+                      :source-path source-path
+                      :args ["srun" "python" source-path]}]
           (try
             (run-experiment! (partial setup-training! store) gather-training! params)
             (catch Exception e
               e))))))
 
-  (clojure.pprint/pprint #_(->> test-exp :process :err (take-last 1000) (apply str))
-                         (dissoc test-exp :process :new-blobs))
 
-  (<!? (-get-in store [(uuid training-params)]))
+  (<!? (-get-in store [(uuid (dissoc test-exp
+                                     :new-blobs
+                                     :new-values))]))
+
+
+  {:bias_history.h5 #uuid "10ecc026-1c3d-527c-ba6b-7f9dd69da60c",
+   :dist_joint_sim.h5 #uuid "31ad948e-a13d-55bd-9e68-1294f8eb0efa",
+   :dist_joint.pdf #uuid "3056c6c5-0b9d-578f-b7a8-3b62d1a240d4",
+   :dist_joint.png #uuid "1bb7ce42-6ea4-534d-92d3-c7c957faaa78",
+   :spike_trains.h5 #uuid "1aa5a022-b1bc-59fb-bbad-ad61f18ac68b",
+   :training_overview.png #uuid "0b58eba0-bb60-5666-8ef1-7c5f93380ff5",
+   :weight_avgs.h5 #uuid "0b5d005f-c2b9-54c8-ade1-4c9c817e2083",
+   :weights_history.h5 #uuid "2db03bec-762d-5731-a747-613de8028200"}
+
+
+  (clojure.pprint/pprint #_(->> test-exp :process :err (take-last 1000) (apply str))
+                         (dissoc unsymmetric-exp :process :new-blobs))
+
+  (<!? (-get-in store [(uuid {:h_count 12
+                              :epochs 1,
+                              :dt 0.01,
+                              :burn_in_time 0.,
+                              :phase_duration 100.0,
+                              :learning_rate 1e-6,
+                              :weight_recording_interval 100.0,
+                              :stdp_burnin 10.0,
+                              :sampling_time 1e6})]))
 
   (doseq [b (:new-blobs test-exp)]
     (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train small rbms"] b)))
@@ -124,15 +174,6 @@
   (first (:transactions (second hist)))
   (uuid (-> hist second :transactions second first))
   (clojure.pprint/pprint hist)
-
-  {:spike_trains.h5 #uuid "08a569bd-7797-5678-b134-70c2764b3dea",
-   :weight_avgs.h5 #uuid "1b783d21-0621-5c10-a6c7-e6ff7f184ffe",
-   :dist_joint_sim.h5 #uuid "00e1f6f1-7d82-5560-8753-8b65cb08c74a",
-   :weights_history.h5 #uuid "0ce9da38-9a10-51eb-ae96-4768b2fa78d6",
-   :dist_joint.pdf #uuid "3eb4c41f-8bf1-596c-b65b-8a205bda5e3c",
-   :dist_joint.png #uuid "1d697f5b-9daf-5c00-a576-7f1d3cc0aca3",
-   :training_overview.png #uuid "0f3661a3-b35b-546f-94cd-5fa895466fbe",
-   :bias_history.h5 #uuid "1483d31d-4992-509c-ae75-ebd3f9e957a1"}
 
   (uuid (<!? (-bget store #uuid "08a569bd-7797-5678-b134-70c2764b3dea" (comp slurp-bytes :input-stream))))
 
@@ -178,12 +219,26 @@
 
   (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
                    (find-fn 'add-training-params)
-                   training-params))
+                   {:h_count 5
+                    :epochs 10,
+                    :dt 0.01,
+                    :burn_in_time 0.,
+                    :phase_duration 100.0,
+                    :learning_rate 1e-6,
+                    :weight_recording_interval 100.0,
+                    :stdp_burnin 10.0,
+                    :sampling_time 1e6}))
 
   (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
                    (find-fn 'data->datoms)
                    {:output digit-data
                     :name "5x5 digits 3,4,5"}))
+
+
+  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
+                   (find-fn 'data->datoms)
+                   {:output (read-string (slurp "/tmp/data.json"))
+                    :name "Small unsymmetric distribution."}))
 
 
   (do

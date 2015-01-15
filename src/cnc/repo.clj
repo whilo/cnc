@@ -78,5 +78,4 @@
 
   (<!? (-assoc-in store ["schema"] (read-string (slurp "resources/schema.edn"))))
 
-  (<!? (-get-in store ["weilbach@dopamine.kip" repo-id]))
-  )
+  (<!? (-get-in store ["weilbach@dopamine.kip" repo-id])))

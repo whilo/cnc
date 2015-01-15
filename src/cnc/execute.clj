@@ -45,4 +45,9 @@
 
 
 (comment
-  (sh "hostname"))
+  (sh "hostname")
+
+
+  (def t (Thread. (fn [] (println "alive") (Thread/sleep (* 60 1000)))))
+  (.setDaemon t false)
+  (.start t))

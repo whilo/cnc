@@ -1,13 +1,27 @@
 (ns cnc.analytics
   (:require [cnc.eval-map :refer [eval-map mapped-eval]]
+            [clj-hdf5.core :as hdf5]
             [hasch.core :refer [uuid]]
             [geschichte.stage :as s]
             [geschichte.platform :refer [<!?]]
-            [konserve.protocols :refer [-get-in]]
+            [konserve.protocols :refer [-get-in -bget]]
             [datomic.api :as d]
+            [clojure.core.matrix :as mat]
             [taoensso.timbre :as timber]))
 
 (timber/refer-timbre)
+
+(defn get-hdf5-tensor [store id path]
+  (let [db (hdf5/open (<!? (-bget store id :file)))
+        m (mat/matrix (hdf5/read  (hdf5/get-dataset db path)))
+        _ (hdf5/close db)]
+    m))
+
+(defn sample-freqs [samples]
+  (let [c (count samples)]
+    (->> (frequencies samples)
+         (map (fn [[k v]] [k (float (/ v c))]))
+         (into {}))))
 
 
 (comment
@@ -23,7 +37,8 @@
     (<!? (-get-in store [id])))
 
   (def conn (<!? (s/branch-value store mapped-eval
-                                 (get-in @stage ["weilbach@dopamine.kip" repo-id]) "train small rbms")))
+                                 (get-in @stage ["weilbach@dopamine.kip" repo-id])
+                                 "train small rbms")))
 
   (clojure.pprint/pprint (seq (d/datoms (d/db conn) :eavt)))
   (clojure.pprint/pprint conn)
@@ -44,7 +59,8 @@
             (d/db conn))
        (map first)
        (map #(d/entity (d/db conn) %))
-       (map #(into {} %)))
+       (map #(into {} %))
+       clojure.pprint/pprint)
 
   (->> (d/q '[:find ?tp-id
               :where
