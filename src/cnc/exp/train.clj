@@ -3,7 +3,7 @@
             [cnc.eval-map :refer [find-fn]]
             [geschichte.stage :as s]
             [geschichte.platform :refer [<!?]]
-            [konserve.protocols :refer [-get-in -bget]]
+            [konserve.protocols :refer [-exists? -get-in -bget]]
             [hasch.core :refer [uuid]]
             [clojure.core.async :refer [>!!]]
             [clojure.java.io :as io]
@@ -120,20 +120,54 @@
             (catch Exception e
               e))))))
 
+  (future
+    (let [source-path (str (get-in @state [:config :source-base-path]) "model-nmsampling/code/ev_cd/stdp.py")]
+      (def learning-rate-1e-4-exp
+        (let [params {:neuron-params neuron-params
+                      :training-params {:h_count 5
+                                        :epochs 1,
+                                        :dt 0.01,
+                                        :burn_in_time 0.,
+                                        :phase_duration 100.0,
+                                        :learning_rate 1e-4,
+                                        :weight_recording_interval 100.0,
+                                        :stdp_burnin 10.0,
+                                        :sampling_time 1e6}
+                      :calibration-id #uuid "1070c715-96af-5a38-856f-0ef985bda116"
+                      :data-id #uuid "25d4dfa7-3c11-559a-9aa3-618a5258a911"
+                      :source-path source-path
+                      :args ["srun" "python" source-path]}]
+          (try
+            (run-experiment! (partial setup-training! store) gather-training! params)
+            (catch Exception e
+              e))))))
+
+  (future
+    (let [source-path (str (get-in @state [:config :source-base-path]) "model-nmsampling/code/ev_cd/stdp.py")]
+      (def learning-rate-1e-3-exp
+        (let [params {:neuron-params neuron-params
+                      :training-params {:h_count 5
+                                        :epochs 1,
+                                        :dt 0.01,
+                                        :burn_in_time 0.,
+                                        :phase_duration 100.0,
+                                        :learning_rate 1e-3,
+                                        :weight_recording_interval 100.0,
+                                        :stdp_burnin 10.0,
+                                        :sampling_time 1e6}
+                      :calibration-id #uuid "1070c715-96af-5a38-856f-0ef985bda116"
+                      :data-id #uuid "25d4dfa7-3c11-559a-9aa3-618a5258a911"
+                      :source-path source-path
+                      :args ["srun" "python" source-path]}]
+          (try
+            (run-experiment! (partial setup-training! store) gather-training! params)
+            (catch Exception e
+              e))))))
 
   (<!? (-get-in store [(uuid (dissoc test-exp
                                      :new-blobs
                                      :new-values))]))
 
-
-  {:bias_history.h5 #uuid "10ecc026-1c3d-527c-ba6b-7f9dd69da60c",
-   :dist_joint_sim.h5 #uuid "31ad948e-a13d-55bd-9e68-1294f8eb0efa",
-   :dist_joint.pdf #uuid "3056c6c5-0b9d-578f-b7a8-3b62d1a240d4",
-   :dist_joint.png #uuid "1bb7ce42-6ea4-534d-92d3-c7c957faaa78",
-   :spike_trains.h5 #uuid "1aa5a022-b1bc-59fb-bbad-ad61f18ac68b",
-   :training_overview.png #uuid "0b58eba0-bb60-5666-8ef1-7c5f93380ff5",
-   :weight_avgs.h5 #uuid "0b5d005f-c2b9-54c8-ade1-4c9c817e2083",
-   :weights_history.h5 #uuid "2db03bec-762d-5731-a747-613de8028200"}
 
 
   (clojure.pprint/pprint #_(->> test-exp :process :err (take-last 1000) (apply str))
@@ -149,8 +183,23 @@
                               :stdp_burnin 10.0,
                               :sampling_time 1e6})]))
 
-  (doseq [b (:new-blobs test-exp)]
-    (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train small rbms"] b)))
+  (<!? (-exists? store (-> learning-rate-1e-4-exp :exp-params :training-params)))
+
+  (let [exp learning-rate-1e-4-exp
+        tparams (-> exp :exp-params :training-params)]
+    (doseq [b (:new-blobs exp)]
+      (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train small rbms"] b)))
+
+    (when-not (<!? (-exists? store (uuid tparams)))
+      (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
+                       (find-fn 'add-training-params)
+                       tparams)))
+
+    (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
+                     (find-fn 'train-ev-cd->datoms)
+                     (dissoc exp
+                             :new-blobs
+                             :new-values))))
 
   (swap! stage update-in ["weilbach@dopamine.kip" repo-id :transactions] assoc "train small rbms" [])
   (get-in @stage ["weilbach@dopamine.kip" repo-id :transactions "train small rbms"])
@@ -158,7 +207,7 @@
   ;; protect from committing dangling value uuids
   (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
                    (find-fn 'train-ev-cd->datoms)
-                   (dissoc test-exp
+                   (dissoc unsymmetric-exp
                            :new-blobs
                            :new-values)))
 
@@ -274,6 +323,8 @@
 
   (clojure.pprint/pprint (-> digit-exp #_(dissoc :process)))
 
+
+  (write-json  (<!? (-get-in store [#uuid "1070c715-96af-5a38-856f-0ef985bda116" :output])))
 
 
 

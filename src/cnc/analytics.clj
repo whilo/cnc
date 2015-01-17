@@ -69,12 +69,31 @@
             (d/db conn))
        ffirst)
 
-  (->> (d/q '[:find ?t
+  (->> (d/q '[:find ?epochs
               :where
               [?e :ref/trans-params ?t-id]
-              [(cnc.analytics/load-key ?t-id) ?t]]
+              [(cnc.analytics/load-key ?t-id) ?t]
+              [(get-in ?t [:exp-params :training-params :epochs]) ?epochs]]
             (d/db conn))
        (clojure.pprint/pprint))
+
+
+  (->> (d/q '[:find ?e ?v
+              :where
+              #_[?e :ref/data #uuid "25d4dfa7-3c11-559a-9aa3-618a5258a911"]
+              [?e :train/h_count 5]
+              [?e :val/id ?v]
+              ]
+            (d/db conn))
+       (clojure.pprint/pprint))
+
+  (load-key #uuid "057c440b-9415-5e4e-bd4f-ffab8ec7ff9c")
+
+  (d/q '[:find ?d-id
+         :where
+         [?e :ref/data ?d-id]
+         ]
+       (d/db conn))
 
   (d/q '[:find ?tau-m
          :where
@@ -103,7 +122,5 @@
   (def weights-history (hdf5/read  (hdf5/get-dataset db "/weights_history")))
   (count weights-history)
   (spit "/tmp/weights_history.json" (vec (get weights-history 110010)))
-
-
 
   )
