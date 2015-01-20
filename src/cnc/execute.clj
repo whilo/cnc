@@ -2,9 +2,14 @@
   (:require [hasch.core :refer [uuid]]
             [clojure.java.io :as io]
             [clojure.java.shell :refer [sh]]
+            [cheshire.core :as json]
             [taoensso.timbre :as timber]))
 
 (timber/refer-timbre)
+
+(defn write-json [base-dir name coll]
+  (with-open [w (io/writer (str base-dir name))]
+    (json/generate-stream coll w)))
 
 (defn slurp-bytes
   "Slurp the bytes from a slurpable thing"

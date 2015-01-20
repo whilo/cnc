@@ -1,12 +1,13 @@
 (ns cnc.analytics
-  (:require [cnc.eval-map :refer [eval-map mapped-eval]]
-            [clj-hdf5.core :as hdf5]
-            [hasch.core :refer [uuid]]
-            [geschichte.stage :as s]
-            [geschichte.platform :refer [<!?]]
-            [konserve.protocols :refer [-get-in -bget]]
-            [datomic.api :as d]
+  (:require [clj-hdf5.core :as hdf5]
             [clojure.core.matrix :as mat]
+            [clojure.set :as set]
+            [cnc.eval-map :refer [eval-map mapped-eval]]
+            [datomic.api :as d]
+            [geschichte.platform :refer [<!?]]
+            [geschichte.stage :as s]
+            [hasch.core :refer [uuid]]
+            [konserve.protocols :refer [-get-in -bget]]
             [taoensso.timbre :as timber]))
 
 (timber/refer-timbre)
@@ -62,6 +63,11 @@
        (map #(into {} %))
        clojure.pprint/pprint)
 
+  (d/q '[:find ?e (distinct ?vid)
+         :where
+         [?e :ref/trans-params ?vid]]
+       (d/db conn))
+
   (->> (d/q '[:find ?tp-id
               :where
               [?spls :sampling/count ?c]
@@ -108,13 +114,20 @@
                                  (first (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "train small rbms"]))
                                  )))
 
-  (get-in @stage ["weilbach@dopamine.kip" repo-id :meta])
+  (get-in @stage [:config :subs])
+  (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches])
+  (get-in @(get-in @stage [:volatile :peer]) [:meta-sub])
+  (<!? (s/checkout! stage ["weilbach@dopamine.kip" repo-id] "sample"))
 
-  (<!? (s/pull! stage ["weilbach@dopamine.kip" repo-id "calibrate"]
+  (get-in @stage ["weilbach@dopamine.kip" repo-id :meta])
+  (<!? (s/subscribe-repos! stage (update-in (get-in @stage [:config :subs]) ["weilbach@dopamine.kip" repo-id] conj "sample")))
+  (<!? (s/pull! stage ["weilbach@dopamine.kip" repo-id "master"]
                 "train small rbms" :allow-induced-conflict? true))
 
-  (<!? (s/merge! stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
-                 (seq (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "train small rbms"]))))
+  (seq (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "sample"]))
+  (def heads '(#uuid "3349a6e0-43f2-5498-a451-08a67a98139c" #uuid "04922927-9da4-57e6-947a-01bf67338889"))
+  (<!? (s/merge! stage ["weilbach@dopamine.kip" repo-id "master"]
+                 heads))
 
   (require '[clj-hdf5.core :as hdf5])
   (def db (hdf5/open (<!? (-bget store #uuid "0ce9da38-9a10-51eb-ae96-4768b2fa78d6" :file))))

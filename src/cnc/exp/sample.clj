@@ -28,11 +28,13 @@
     (def test-exp
       (run-experiment! setup-sampling!
                        gather-sampling!
-                       {:weights [[0.5 -0.2 0.3 0.3]
+                       {:weights #_[[0.5 -0.2 0.3 0.3]
                                   [-0.2 -0.4 0.2 -0.1]
                                   [0.1 0.3 0.6 0.2]]
-                        :v-bias [0.0 0.0 0.0 0.0]
-                        :h-bias [0.0 0.0 0.0]
+                        [[2.0 -2.0]
+                         [-2.0 2.0]]
+                        :v-bias [0.0 0.0]
+                        :h-bias [0.8 0.2]
                         :seed 42
                         :source-path source-path
                         :args ["srun" "lein-exec" "-p" source-path]})))
@@ -40,18 +42,19 @@
 
 
 
-  (<!? (-get-in store ["weilbach@dopamine.kip" repo-id :branches "train small rbms"]))
+  (<!? (-get-in store ["weilbach@dopamine.kip" repo-id :branches "sample"]))
 
   (<!? (s/branch! stage
                   ["weilbach@dopamine.kip" repo-id]
                   "train small rbms"
                   (first (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "master"]))))
 
-  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
+  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "sample"]
                    (find-fn 'sampling->datoms)
                    test-exp))
 
-  (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train small rbms"}}}))
+  (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"sample"}}}))
+
 
 
 

@@ -48,7 +48,7 @@
                          gather-calibration!
                          {:neuron-params neuron-params
                           :source-path source-path
-                          :args ["python" source-path]}))))
+                          :args ["srun" "python" source-path]}))))
 
   (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "calibrate"]
                    (find-fn 'add-neuron-params)

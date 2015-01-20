@@ -46,8 +46,11 @@
 
 
 (comment
-  (require '[cnc.core :refer [state]])
-  (def stage (get-in @state [:repo :stage]))
+  (do
+    (require '[cnc.core :refer [state]])
+    (def stage (get-in @state [:repo :stage]))
+    (def store (get-in @state [:repo :store]))
+    (def repo-id (get-in @state [:repo :id])))
   (clojure.pprint/pprint @stage)
 
   (<!? (s/connect! stage "ws://127.0.0.1:31744"))
@@ -55,7 +58,8 @@
   (def new-id (<!? (s/create-repo! stage "ev-cd experiments.")))
 
 
-  (<!? (s/transact stage ["weilbach@dopamine.kip" new-id "master"]
+
+  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "master"]
                    [[(find-fn 'create-db)
                      {:name "ev-experiments"}]
                     [(find-fn 'transact-schema)
@@ -63,14 +67,14 @@
                          slurp
                          read-string)]]))
 
-  (<!? (s/commit! stage {"weilbach@dopamine.kip" {new-id #{"master"}}}))
+  (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"master"}}}))
 
 
 
   (<!? (s/branch! stage
-                  ["weilbach@dopamine.kip" new-id]
-                  "train small rbms"
-                  (first (get-in @stage ["weilbach@dopamine.kip" new-id :meta :branches "master"]))))
+                  ["weilbach@dopamine.kip" repo-id]
+                  "current based"
+                  (first (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "master"]))))
 
 
 
@@ -78,4 +82,4 @@
 
   (<!? (-assoc-in store ["schema"] (read-string (slurp "resources/schema.edn"))))
 
-  (<!? (-get-in store ["weilbach@dopamine.kip" repo-id])))
+  (<!? (-get-in store ["weilbach@dopamine.kip" repo-id :branches "train small rbms"])))

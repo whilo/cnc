@@ -1,5 +1,5 @@
 (ns cnc.exp.train
-  (:require [cnc.execute :refer [run-experiment! slurp-bytes]]
+  (:require [cnc.execute :refer [run-experiment! slurp-bytes write-json]]
             [cnc.eval-map :refer [find-fn]]
             [geschichte.stage :as s]
             [geschichte.platform :refer [<!?]]
@@ -12,10 +12,6 @@
             [taoensso.timbre :as timber]))
 
 (timber/refer-timbre)
-
-(defn write-json [base-dir name coll]
-  (with-open [w (io/writer (str base-dir name))]
-    (json/generate-stream coll w)))
 
 (defn setup-training! [store base-dir {:keys [neuron-params training-params
                                               data-id calibration-id]}]
@@ -111,8 +107,8 @@
                                         :weight_recording_interval 100.0,
                                         :stdp_burnin 10.0,
                                         :sampling_time 1e6}
-                      :calibration-id #uuid "1070c715-96af-5a38-856f-0ef985bda116"
-                      :data-id #uuid "25d4dfa7-3c11-559a-9aa3-618a5258a911"
+                      :calibration-id #uuid "35aaea32-02c3-550a-849d-a6e27832f9fa"
+                      :data-id #uuid "37107994-69aa-5a8f-9fd9-5616298b993b"
                       :source-path source-path
                       :args ["srun" "python" source-path]}]
           (try
@@ -185,7 +181,7 @@
 
   (<!? (-exists? store (-> learning-rate-1e-4-exp :exp-params :training-params)))
 
-  (let [exp learning-rate-1e-4-exp
+  (let [exp unsymmetric-exp
         tparams (-> exp :exp-params :training-params)]
     (doseq [b (:new-blobs exp)]
       (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train small rbms"] b)))
