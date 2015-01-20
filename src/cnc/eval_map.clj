@@ -67,6 +67,56 @@
                            :ref/trans-params id}])
        conn))
 
+   '(fn bias-sampling->datoms [conn params]
+      (let [id (uuid params)
+            {git-id :git-commit-id
+             output :output
+             {:keys [v-bias h-bias]} :exp-params}  params]
+        (db-transact conn [{:val/id (uuid output)
+                            :ref/rbm-v-bias (uuid v-bias)
+                            :ref/rbm-h-bias (uuid h-bias)
+                            :git/commit-id git-id
+                            :ref/trans-params id}])
+        conn))
+
+   (fn [conn params]
+     (let [id (uuid params)
+           {git-id :git-commit-id
+            output :output
+            {:keys [v-bias h-bias]} :exp-params}  params]
+       (db-transact conn [{:val/id (uuid output)
+                           :ref/rbm-v-bias (uuid v-bias)
+                           :ref/rbm-h-bias (uuid h-bias)
+                           :git/commit-id git-id
+                           :ref/trans-params id}])
+       conn))
+
+   '(fn lif-sampling->datoms [conn params]
+      (let [id (uuid params)
+            {git-id :git-commit-id
+             output :output
+             {:keys [v-bias h-bias weights]} :exp-params}  params]
+        (db-transact conn [{:val/id (uuid output)
+                            :ref/rbm-weights (uuid weights)
+                            :ref/rbm-v-bias (uuid v-bias)
+                            :ref/rbm-h-bias (uuid h-bias)
+                            :git/commit-id git-id
+                            :ref/trans-params id}])
+        conn))
+
+   (fn lif-sampling->datoms [conn params]
+     (let [id (uuid params)
+           {git-id :git-commit-id
+            output :output
+            {:keys [v-bias h-bias weights]} :exp-params}  params]
+       (db-transact conn [{:val/id (uuid output)
+                           :ref/rbm-weights (uuid weights)
+                           :ref/rbm-v-bias (uuid v-bias)
+                           :ref/rbm-h-bias (uuid h-bias)
+                           :git/commit-id git-id
+                           :ref/trans-params id}])
+       conn))
+
    '(fn data->datoms [conn params]
       (let [id (uuid params)
             {data :output
