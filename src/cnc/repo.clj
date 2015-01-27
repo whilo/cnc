@@ -21,11 +21,11 @@
         store (<!? (new-fs-store store))
         peer-server (server-peer (create-http-kit-handler! peer) ;; TODO client-peer?
                                  store
-                                 (comp (block-detector :peer-core)
+                                 (comp (partial block-detector :peer-core)
                                        (partial fetch store)
                                        ensure-hash
                                        (partial publish-on-request store)
-                                       (block-detector :p2p-surface)))
+                                       (partial block-detector :p2p-surface)))
         #_(client-peer "benjamin"
                        store
                        (comp (partial fetch store)
