@@ -11,6 +11,7 @@
 
   (def log-counter (atom 0))
 
+  (timbre/set-config! [:appenders :standard-out :min-level] :warn)
 
   (timbre/set-config! [:appenders :fs-store] {:doc "Simple file appender."
                                               :min-level nil :enabled? true
@@ -23,6 +24,8 @@
                                                         (<!? (-bassoc log-store (swap! log-counter inc) (.toByteArray baos)))
                                                         (catch Exception e
                                                           (.printStacktrace e)))))}))
+
+
 
 
 

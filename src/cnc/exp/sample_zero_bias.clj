@@ -76,7 +76,7 @@
               e))))))
 
   (:output zero-bias-exp)
-  (:output zero-bias-exp)
+  {:dist_joint_sim.h5 #uuid "3e9e0f32-0cfd-5b19-98e9-373ad99c1fc7", :spike_trains.h5 #uuid "00e1df01-52fc-5125-8885-8217ec993de8"}
 
   (let [exp zero-bias-exp]
     (doseq [b (:new-blobs exp)]

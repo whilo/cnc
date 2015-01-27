@@ -33,6 +33,8 @@
   (def store (get-in @state [:repo :store]))
   (def repo-id (get-in @state [:repo :id]))
 
+  (aprint.core/aprint s/commit-value-cache)
+
 
   (defn load-key [id]
     (<!? (-get-in store [id])))
@@ -110,23 +112,25 @@
 
   (clojure.pprint/pprint
    (<!? (s/commit-history-values store
-                                 (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :causal-order])
-                                 (first (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "train small rbms"]))
+                                 (get-in @stage ["weilbach@dopamine.kip" repo-id :state :causal-order])
+                                 (first (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches "train small rbms"]))
                                  )))
 
   (get-in @stage [:config :subs])
-  (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches])
+  (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches])
   (get-in @(get-in @stage [:volatile :peer]) [:meta-sub])
   (<!? (s/checkout! stage ["weilbach@dopamine.kip" repo-id] "sample"))
 
-  (get-in @stage ["weilbach@dopamine.kip" repo-id :meta])
+  (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches])
   (<!? (s/subscribe-repos! stage (update-in (get-in @stage [:config :subs]) ["weilbach@dopamine.kip" repo-id] conj "sample")))
-  (<!? (s/pull! stage ["weilbach@dopamine.kip" repo-id "master"]
-                "train small rbms" :allow-induced-conflict? true))
+  (<!? (s/pull! stage ["weilbach@dopamine.kip" repo-id "calibrate"]
+                "train small rbms" :allow-induced-conflict? false))
 
-  (seq (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "sample"]))
-  (def heads '(#uuid "3349a6e0-43f2-5498-a451-08a67a98139c" #uuid "04922927-9da4-57e6-947a-01bf67338889"))
-  (<!? (s/merge! stage ["weilbach@dopamine.kip" repo-id "master"]
+  (aprint.core/aprint (get-in @stage ["weilbach@dopamine.kip" repo-id]))
+  (seq (get-in @stage ["weilbach@dopamine.kip" repo-id]))
+  (def heads '(#uuid "3f8efd4a-8974-5f60-b538-5c84aeda751d"
+                     #uuid "3ee4e3dc-1bf7-5df3-83c7-e0e23ebdf2f6"))
+  (<!? (s/merge! stage ["weilbach@dopamine.kip" repo-id "calibrate"]
                  heads))
 
   (require '[clj-hdf5.core :as hdf5])

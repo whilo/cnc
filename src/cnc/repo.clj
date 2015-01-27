@@ -9,6 +9,7 @@
             [geschichte.p2p.fetch :refer [fetch]]
             [geschichte.p2p.hash :refer [ensure-hash]]
             [geschichte.p2p.publish-on-request :refer [publish-on-request]]
+            [geschichte.p2p.block-detector :refer [block-detector]]
             [geschichte.platform :refer [create-http-kit-handler! <!? start]]
             [clojure.core.async :refer [>!!]]
             [datomic.api :as d] ;; to read schema file id literals
@@ -20,9 +21,11 @@
         store (<!? (new-fs-store store))
         peer-server (server-peer (create-http-kit-handler! peer) ;; TODO client-peer?
                                  store
-                                 (comp (partial fetch store)
+                                 (comp (block-detector :peer-core)
+                                       (partial fetch store)
                                        ensure-hash
-                                       (partial publish-on-request store)))
+                                       (partial publish-on-request store)
+                                       (block-detector :p2p-surface)))
         #_(client-peer "benjamin"
                        store
                        (comp (partial fetch store)
@@ -82,4 +85,4 @@
 
   (<!? (-assoc-in store ["schema"] (read-string (slurp "resources/schema.edn"))))
 
-  (<!? (-get-in store ["weilbach@dopamine.kip" repo-id :branches "train small rbms"])))
+  (<!? (-get-in store ["weilbach@dopamine.kip" repo-id :branches])))

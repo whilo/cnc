@@ -11,6 +11,8 @@
 
 ;; scope for eval in this namespace
 
+;; TODO database/value per branch
+
 (defn db-transact [conn txs]
   (debug "TRANSACT DATOMIC:"
          @(d/transact conn (map #(assoc % :db/id (d/tempid :db.part/user))

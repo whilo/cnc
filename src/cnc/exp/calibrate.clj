@@ -20,17 +20,27 @@
   {:output (with-open [r (io/reader (str base-directory "calibration.json"))]
              (json/parse-stream r true))})
 
-(def neuron-params {:cm         0.2,
-                    :tau_m      1.,
-                    :e_rev_E    0.,
-                    :e_rev_I    -100.,
-                    :v_thresh   -50.,
-                    :tau_syn_E  10.,
-                    :v_rest     -50.,
-                    :tau_syn_I  10.,
-                    :v_reset    -50.001,
-                    :tau_refrac 10.,
-                    :i_offset   0.})
+(def neuron-params-cond {:cm         0.2,
+                         :tau_m      1.,
+                         :e_rev_E    0.,
+                         :e_rev_I    -100.,
+                         :v_thresh   -50.,
+                         :tau_syn_E  10.,
+                         :v_rest     -50.,
+                         :tau_syn_I  10.,
+                         :v_reset    -50.001,
+                         :tau_refrac 10.,
+                         :i_offset   0.})
+
+(def neuron-params-curr {:cm         0.2,
+                         :tau_m      1.,
+                         :v_thresh   -50.,
+                         :tau_syn_E  10.,
+                         :v_rest     -50.,
+                         :tau_syn_I  10.,
+                         :v_reset    -50.001,
+                         :tau_refrac 10.,
+                         :i_offset   0.})
 
 (comment
   (require '[cnc.core :refer [state]]
@@ -46,13 +56,13 @@
       (def test-exp
         (run-experiment! setup-calibration!
                          gather-calibration!
-                         {:neuron-params neuron-params
+                         {:neuron-params neuron-params-curr
                           :source-path source-path
                           :args ["srun" "python" source-path]}))))
 
   (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "calibrate"]
                    (find-fn 'add-neuron-params)
-                   neuron-params))
+                   neuron-params-curr))
 
 
 
