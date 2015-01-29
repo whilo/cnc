@@ -136,22 +136,18 @@
                                       :tau_refrac 10.,
                                       :i_offset   0.}
                       :training-params {:h_count 5
-                                        :epochs 10,
+                                        :epochs 3,
                                         :dt 0.01,
                                         :burn_in_time 0.,
                                         :phase_duration 100.0,
-                                        :learning_rate 2e-4,
+                                        :learning_rate 5e-4,
                                         :weight_recording_interval 100.0,
                                         :stdp_burnin 10.0,
                                         :sampling_time 1e6}
                       :calibration-id #uuid "22f685d0-ea7f-53b5-97d7-c6d6cadc67d3"
                       :data-id #uuid "37107994-69aa-5a8f-9fd9-5616298b993b"
                       :source-path source-path
-                      :args ["srun" "python" source-path]}]
-          #_(merge (gather-training!  "experiments/Sat Jan 24 18:14:21 CET 2015_e6d3c7c4/" nil)
-                   {:exp-params params
-                    :base-directory "experiments/Sat Jan 24 18:14:21 CET 2015_e6d3c7c4/"
-                    :git-commit-id "8d3dd45aa268da213148c50aa3505d64606cbce8"})
+                      :args [#_"srun" "python" source-path]}]
           (try
             (run-experiment! (partial setup-training! store) gather-training! params)
             (catch Exception e
@@ -197,8 +193,10 @@
                                      :new-blobs
                                      :new-values))]))
 
+
+
   (clojure.pprint/pprint #_(->> test-exp :process :err (take-last 1000) (apply str))
-                         (dissoc unsymmetric-exp :process :new-blobs))
+                         (dissoc curr-exp :process :new-blobs))
 
   (<!? (-get-in store [(uuid {:h_count 12
                               :epochs 1,
@@ -212,7 +210,7 @@
 
 
   ;; TODO protect from committing dangling value uuids
-  (let [exp tiny-exp
+  (let [exp curr-exp
         tparams (-> exp :exp-params :training-params)]
     (doseq [b (:new-blobs exp)]
       (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train small rbms"] b)))

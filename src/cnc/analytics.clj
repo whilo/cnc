@@ -86,16 +86,15 @@
        (clojure.pprint/pprint))
 
 
-  (->> (d/q '[:find ?e ?v
+  (->> (d/q '[:find ?tid
               :where
-              #_[?e :ref/data #uuid "25d4dfa7-3c11-559a-9aa3-618a5258a911"]
-              [?e :train/h_count 5]
-              [?e :val/id ?v]
-              ]
+              [?e :ref/data #uuid "19a5da17-6b4c-548c-8b6f-24faf06c089c"]
+              [?e :ref/trans-params ?ti]]
             (d/db conn))
        (clojure.pprint/pprint))
 
-  (load-key #uuid "057c440b-9415-5e4e-bd4f-ffab8ec7ff9c")
+
+  (load-key #uuid "19a5da17-6b4c-548c-8b6f-24faf06c089c")
 
   (d/q '[:find ?d-id
          :where
