@@ -18,5 +18,5 @@
                  [gg4clj "0.1.0"]
 
                  [net.polyc0l0r/geschichte "0.1.0-SNAPSHOT"]]
-  :jvm-opts ["-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n"]
+  :jvm-opts ["-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n" "-Xmx6g"]
   :main cnc.core)
