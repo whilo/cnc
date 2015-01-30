@@ -127,9 +127,10 @@
 
   (aprint.core/aprint (get-in @stage ["weilbach@dopamine.kip" repo-id]))
   (seq (get-in @stage ["weilbach@dopamine.kip" repo-id]))
-  (def heads '(#uuid "3f8efd4a-8974-5f60-b538-5c84aeda751d"
-                     #uuid "3ee4e3dc-1bf7-5df3-83c7-e0e23ebdf2f6"))
-  (<!? (s/merge! stage ["weilbach@dopamine.kip" repo-id "calibrate"]
+  (def heads '(#uuid "0870de8f-2424-5b47-ae03-00567593483e" #uuid "0cf765eb-a646-53ae-9d99-5ce903af3dd7"))
+
+
+  (<!? (s/merge! stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
                  heads))
 
   (require '[clj-hdf5.core :as hdf5])
