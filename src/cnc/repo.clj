@@ -61,6 +61,8 @@
   (def new-id (<!? (s/create-repo! stage "ev-cd experiments.")))
 
 
+  (clojure.pprint/pprint (<!? (-get-in store [#uuid "214e7e59-8ba0-543a-9ea3-7076bb1f518b"])))
+  (clojure.pprint/pprint (<!? (-get-in store [#uuid "059280a0-3682-592b-bac4-99ba12795972"])))
 
   (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "master"]
                    [[(find-fn 'create-db)
@@ -76,8 +78,8 @@
 
   (<!? (s/branch! stage
                   ["weilbach@dopamine.kip" repo-id]
-                  "current based"
-                  (first (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "master"]))))
+                  "train current rbms"
+                  (first (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches "master"]))))
 
 
 

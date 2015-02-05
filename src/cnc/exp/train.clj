@@ -21,13 +21,15 @@
   (write-json base-dir "data.json" (<!? (-get-in store [data-id :output]))))
 
 (defn gather-training! [base-directory _]
-  (let [blob-names [;"bias_history.h5"
+  (let [blob-names ["bias_history.h5"
                     "dist_joint_sim.h5"
-;                    "dist_joint.pdf"
-;                    "dist_joint.png"
+                    "dist_joint.pdf"
+                    "dist_joint.png"
+                    "stdp.log"
                     "spike_trains.h5"
                     "training_overview.png"
                     "training_overview.pdf"
+                    "training_overview.svg"
                     "weight_avgs.h5"
                     "weights_history.h5"]
         blobs (doall (map #(->> % (str base-directory) slurp-bytes)
@@ -93,34 +95,6 @@
                 e))))))
 
 
-
-
-
-
-
-  (future
-    (let [source-path (str (get-in @state [:config :source-base-path]) "model-nmsampling/code/ev_cd/stdp.py")]
-      (def unsymmetric-exp
-        (let [params {:neuron-params neuron-params
-                      :training-params {:h_count 5
-                                        :epochs 1,
-                                        :dt 0.01,
-                                        :burn_in_time 0.,
-                                        :phase_duration 100.0,
-                                        :learning_rate 1e-5,
-                                        :weight_recording_interval 100.0,
-                                        :stdp_burnin 10.0,
-                                        :sampling_time 1e6}
-                      :calibration-id #uuid "35aaea32-02c3-550a-849d-a6e27832f9fa"
-                      :data-id #uuid "37107994-69aa-5a8f-9fd9-5616298b993b"
-                      :source-path source-path
-                      :args ["srun" "python" source-path]}]
-          (try
-            (run-experiment! (partial setup-training! store) gather-training! params)
-            (catch Exception e
-              e))))))
-
-
   (<!? (-get-in store [#uuid "22f685d0-ea7f-53b5-97d7-c6d6cadc67d3" :output]))
 
   (future
@@ -135,17 +109,20 @@
                                       :v_reset    -50.001,
                                       :tau_refrac 10.,
                                       :i_offset   0.}
-                      :training-params {:h_count 5
+                      :training-params {:h_count 10
                                         :epochs 5,
-                                        :dt 0.01,
+                                        :dt 0.1,
                                         :burn_in_time 0.,
                                         :phase_duration 100.0,
-                                        :learning_rate 5e-5,
+                                        :learning_rate 2e-5,
                                         :weight_recording_interval 100.0,
                                         :stdp_burnin 10.0,
-                                        :sampling_time 1e6}
+                                        :sampling_time 1e6
+                                        :sim_setup_kwargs {:grng_seed 43
+                                                           :rng_seeds_seed 43}}
                       :calibration-id #uuid "22f685d0-ea7f-53b5-97d7-c6d6cadc67d3"
-                      :data-id #uuid "37107994-69aa-5a8f-9fd9-5616298b993b"
+                      :data-id #uuid "3197da4c-3806-544f-a62b-2f48383691d4"
+                      #_#uuid "37107994-69aa-5a8f-9fd9-5616298b993b"
                       :source-path source-path
                       :args ["srun" "python" source-path]}]
           (try
@@ -189,9 +166,11 @@
 
   (println (-> curr-exp ex-data :process :err))
 
-  (<!? (-get-in store [(uuid (dissoc tiny-exp
-                                     :new-blobs
-                                     :new-values))]))
+  (clojure.pprint/pprint (dissoc curr-exp :new-blobs :new-values :process))
+
+  (<!? (-get-in store [(uuid (dissoc curr-exp :new-blobs :new-values :process))]))
+
+
 
   (<!? (-get-in store [#uuid "181516fb-226e-5f0b-81b8-09eadddc4f9a"]))
 
@@ -213,31 +192,35 @@
   (let [exp curr-exp
         tparams (-> exp :exp-params :training-params)]
     (doseq [b (:new-blobs exp)]
-      (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train small rbms"] b)))
+      (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train current rbms"] b)))
 
     (when-not (<!? (-exists? store (uuid tparams)))
-      (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
+      (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
                        (find-fn 'add-training-params)
                        tparams)))
 
-    (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
+    (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
                      (find-fn 'train-ev-cd->datoms)
                      (dissoc exp
+                             :process
                              :new-blobs
                              :new-values))))
 
-  (swap! stage update-in ["weilbach@dopamine.kip" repo-id :transactions] assoc "train small rbms" [])
-  (get-in @stage ["weilbach@dopamine.kip" repo-id :transactions "train small rbms"])
+  (uuid (dissoc curr-exp :process :new-blobs :new-values))
 
 
-  (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train small rbms"}}}))
+  (swap! stage update-in ["weilbach@dopamine.kip" repo-id :transactions] assoc "train current rbms" [])
+  (get-in @stage ["weilbach@dopamine.kip" repo-id :transactions "train current rbms"])
 
-  (clojure.pprint/pprint (-> test-exp (dissoc :process)))
+
+  (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms"}}}))
+
+  (clojure.pprint/pprint (-> curr-exp (dissoc :process)))
 
   (def hist
     (<!? (s/commit-history-values store
                                   (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :causal-order])
-                                  (first (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "train small rbms"])))))
+                                  (first (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "train current rbms"])))))
 
   (def digit-data [[0 1 1 1 0
                     0 0 0 0 1
@@ -255,7 +238,7 @@
                     0 0 0 1 0
                     1 1 1 0 0]])
 
-  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
+  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
                    (find-fn 'add-training-params)
                    {:h_count 5
                     :epochs 10,
@@ -267,25 +250,25 @@
                     :stdp_burnin 10.0,
                     :sampling_time 1e6}))
 
-  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
+  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
                    (find-fn 'data->datoms)
                    {:output digit-data
                     :name "5x5 digits 3,4,5"}))
 
-  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
+  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
                    (find-fn 'data->datoms)
                    {:output [[0] [1]]
                     :name "Minimal binary data [[0],[1]]."}))
 
 
-  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
+  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
                    (find-fn 'data->datoms)
                    {:output (read-string (slurp "/tmp/data.json"))
                     :name "Small unsymmetric distribution."}))
 
 
   (do
-    (time (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train small rbms"}}})))
+    (time (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms"}}})))
     nil)
 
 

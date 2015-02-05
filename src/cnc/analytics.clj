@@ -27,7 +27,7 @@
 
 (comment
   (require '[cnc.core :refer [state]]
-           '[konserve.protocols :refer [-get-in -bget]]
+           '[konserve.protocols :refer [-get-in -bget -exists?]]
            '[geschichte.platform :refer [<!?]])
   (def stage (get-in @state [:repo :stage]))
   (def store (get-in @state [:repo :store]))
@@ -41,12 +41,12 @@
 
   (def conn (<!? (s/branch-value store mapped-eval
                                  (get-in @stage ["weilbach@dopamine.kip" repo-id])
-                                 "train small rbms")))
+                                 "train current rbms")))
 
   (clojure.pprint/pprint (seq (d/datoms (d/db conn) :eavt)))
   (clojure.pprint/pprint conn)
 
-
+  (<!? (-exists? store  #uuid "2976ffdf-5cf4-5188-9dfa-ab1e89752363"))
 
   (->> (d/q '[:find ?cm
               :where
@@ -119,18 +119,19 @@
   (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches])
   (get-in @(get-in @stage [:volatile :peer]) [:meta-sub])
   (<!? (s/checkout! stage ["weilbach@dopamine.kip" repo-id] "sample"))
-
+  (update-in (get-in @stage [:config :subs]) ["weilbach@dopamine.kip" repo-id] conj "sample")
   (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches])
   (<!? (s/subscribe-repos! stage (update-in (get-in @stage [:config :subs]) ["weilbach@dopamine.kip" repo-id] conj "sample")))
-  (<!? (s/pull! stage ["weilbach@dopamine.kip" repo-id "calibrate"]
-                "train small rbms" :allow-induced-conflict? false))
+  (<!? (s/pull! stage ["weilbach@dopamine.kip" repo-id "sample"]
+                "train current rbms" :allow-induced-conflict? true))
 
   (aprint.core/aprint (get-in @stage ["weilbach@dopamine.kip" repo-id]))
-  (seq (get-in @stage ["weilbach@dopamine.kip" repo-id]))
-  (def heads '(#uuid "0870de8f-2424-5b47-ae03-00567593483e" #uuid "0cf765eb-a646-53ae-9d99-5ce903af3dd7"))
+  (seq (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches "train current rbms"]))
+
+  (def heads '(#uuid "323847ce-67af-5738-b8dc-881d558b076f" #uuid "2dc6068d-4a1c-5911-b1cc-cff5b3d17618"))
 
 
-  (<!? (s/merge! stage ["weilbach@dopamine.kip" repo-id "train small rbms"]
+  (<!? (s/merge! stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
                  heads))
 
   (require '[clj-hdf5.core :as hdf5])
