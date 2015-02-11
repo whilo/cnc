@@ -230,6 +230,8 @@
                                   [(keyword "train" (name k))
                                    (cond (= k :weight_recording_interval)
                                          (float v)
+                                         (= k :sim_setup_kwargs)
+                                         (:rng_seeds_seed v)
                                          :else v)]))
                            (into {}))]
        (db-transact conn [(assoc namespaced :val/id (uuid params))]))

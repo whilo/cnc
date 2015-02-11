@@ -160,6 +160,11 @@
   :db/doc "Time resolution for simulator."
   :db.install/_attribute :db.part/db}
  {:db/id #db/id[:db.part/db]
+  :db/ident :train/sim_setup_kwargs
+  :db/valueType :db.type/long
+  :db/cardinality :db.cardinality/one
+  :db.install/_attribute :db.part/db}
+ {:db/id #db/id[:db.part/db]
   :db/ident :train/burn_in_time
   :db/valueType :db.type/float
   :db/cardinality :db.cardinality/one

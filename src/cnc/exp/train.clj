@@ -13,55 +13,24 @@
 
 (timber/refer-timbre)
 
-(defn setup-training! [store base-dir {:keys [neuron-params training-params
+(defn setup-training! [store base-dir {:keys [training-params
                                               data-id calibration-id]}]
-  (write-json base-dir "neuron_params.json" neuron-params)
   (write-json base-dir "training_params.json" training-params)
   (write-json base-dir "calibration.json" (<!? (-get-in store [calibration-id :output])))
   (write-json base-dir "data.json" (<!? (-get-in store [data-id :output]))))
 
 (defn gather-training! [base-directory _]
   (let [blob-names ["bias_history.h5"
+                    "weight_history.h5"
                     "dist_joint_sim.h5"
-                    "dist_joint.pdf"
-                    "dist_joint.png"
-                    "stdp.log"
-                    "spike_trains.h5"
-                    "training_overview.png"
-                    "training_overview.pdf"
-                    "training_overview.svg"
-                    "weight_avgs.h5"
-                    "weights_history.h5"]
+                    "train.log"
+                    "spike_trains.h5"]
         blobs (doall (map #(->> % (str base-directory) slurp-bytes)
                           blob-names))]
     {:output (into {} (map (fn [n b] [(keyword n)
                                      (uuid b)])
                            blob-names blobs))
      :new-blobs blobs}))
-
-
-(def training-params {:h_count 9
-                      :epochs 1,
-                      :dt 0.01,
-                      :burn_in_time 0.,
-                      :phase_duration 100.0,
-                      :learning_rate 1e-6,
-                      :weight_recording_interval 100.0,
-                      :stdp_burnin 10.0,
-                      :sampling_time 1e6})
-
-(def neuron-params {:cm         0.2,
-                    :tau_m      1.,
-                    :e_rev_E    0.,
-                    :e_rev_I    -100.,
-                    :v_thresh   -50.,
-                    :tau_syn_E  10.,
-                    :v_rest     -50.,
-                    :tau_syn_I  10.,
-                    :v_reset    -50.001,
-                    :tau_refrac 10.,
-                    :i_offset   0.})
-
 
 
 (comment
@@ -71,90 +40,23 @@
   (def stage (get-in @state [:repo :stage]))
   (def store (get-in @state [:repo :store]))
   (def repo-id (get-in @state [:repo :id]))
-  (future
-    (let [source-path (str (get-in @state [:config :source-base-path]) "model-nmsampling/code/ev_cd/stdp.py")]
-      (def test-exp
-        (let [params {:neuron-params neuron-params
-                      :training-params {:h_count 12
-                                        :epochs 1,
-                                        :dt 0.01,
-                                        :burn_in_time 0.,
-                                        :phase_duration 100.0,
-                                        :learning_rate 1e-6,
-                                        :weight_recording_interval 100.0,
-                                        :stdp_burnin 10.0,
-                                        :sampling_time 1e6}
-                      :calibration-id #uuid "1070c715-96af-5a38-856f-0ef985bda116"
-                      :data-id #uuid "2e354ab2-5629-53f0-88d6-79e405f61217"
-                      :source-path source-path
-                      :args ["srun" "python" source-path]}]
-
-          #_(try
-              (run-experiment! (partial setup-training! store) gather-training! params)
-              (catch Exception e
-                e))))))
-
-
-  (<!? (-get-in store [#uuid "22f685d0-ea7f-53b5-97d7-c6d6cadc67d3" :output]))
 
   (future
-    (let [source-path (str (get-in @state [:config :source-base-path]) "model-nmsampling/code/ev_cd/stdp.py")]
+    (let [source-path (str (get-in @state [:config :source-base-path])
+                           "model-nmsampling/code/ev_cd/train.py")]
       (def curr-exp
-        (let [params {:neuron-params {:cm         0.2,
-                                      :tau_m      1.,
-                                      :v_thresh   -50.,
-                                      :tau_syn_E  10.,
-                                      :v_rest     -50.,
-                                      :tau_syn_I  10.,
-                                      :v_reset    -50.001,
-                                      :tau_refrac 10.,
-                                      :i_offset   0.}
-                      :training-params {:h_count 10
-                                        :epochs 5,
+        (let [params {:training-params {:h_count 10
+                                        :epochs 1,
                                         :dt 0.1,
                                         :burn_in_time 0.,
                                         :phase_duration 100.0,
                                         :learning_rate 2e-5,
                                         :weight_recording_interval 100.0,
                                         :stdp_burnin 10.0,
-                                        :sampling_time 1e6
                                         :sim_setup_kwargs {:grng_seed 43
                                                            :rng_seeds_seed 43}}
                       :calibration-id #uuid "22f685d0-ea7f-53b5-97d7-c6d6cadc67d3"
                       :data-id #uuid "3197da4c-3806-544f-a62b-2f48383691d4"
-                      #_#uuid "37107994-69aa-5a8f-9fd9-5616298b993b"
-                      :source-path source-path
-                      :args ["srun" "python" source-path]}]
-          (try
-            (run-experiment! (partial setup-training! store) gather-training! params)
-            (catch Exception e
-              (debug "experiment failed: " e)
-              e))))))
-
-
-  (future
-    (let [source-path (str (get-in @state [:config :source-base-path]) "model-nmsampling/code/ev_cd/stdp.py")]
-      (def tiny-exp
-        (let [params {:neuron-params {:cm         0.2,
-                                      :tau_m      1.,
-                                      :v_thresh   -50.,
-                                      :tau_syn_E  10.,
-                                      :v_rest     -50.,
-                                      :tau_syn_I  10.,
-                                      :v_reset    -50.001,
-                                      :tau_refrac 10.,
-                                      :i_offset   0.}
-                      :training-params {:h_count 1
-                                        :epochs 100,
-                                        :dt 0.01,
-                                        :burn_in_time 0.,
-                                        :phase_duration 100.0,
-                                        :learning_rate 1e-4,
-                                        :weight_recording_interval 100.0,
-                                        :stdp_burnin 10.0,
-                                        :sampling_time 1e6}
-                      :calibration-id #uuid "22f685d0-ea7f-53b5-97d7-c6d6cadc67d3"
-                      :data-id #uuid "19a5da17-6b4c-548c-8b6f-24faf06c089c"
                       :source-path source-path
                       :args ["python" source-path]}]
           (try
@@ -163,8 +65,10 @@
               (debug "experiment failed: " e)
               e))))))
 
+  (:output curr-exp)
 
-  (println (-> curr-exp ex-data :process :err))
+  (println (-> curr-exp ex-data :process :out))
+  (println (-> curr-exp :process :out))
 
   (clojure.pprint/pprint (dissoc curr-exp :new-blobs :new-values :process))
 
@@ -207,6 +111,7 @@
                              :new-values))))
 
   (uuid (dissoc curr-exp :process :new-blobs :new-values))
+
 
 
   (swap! stage update-in ["weilbach@dopamine.kip" repo-id :transactions] assoc "train current rbms" [])

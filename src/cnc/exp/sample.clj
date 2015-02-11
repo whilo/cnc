@@ -56,6 +56,11 @@
 
 
 
+  ;; sample from stdp rbm
+  ;; - extract sequence of weights from rbm
+  (<!? (-bget store ["weilbach@dopamine.kip" repo-id :branches "sample"]))
+  ;; - for each sample for some time in parallel
+  ;; - calculate dist_join_sim over visible units
 
 
 
