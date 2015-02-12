@@ -98,9 +98,12 @@
 
   (d/q '[:find ?d-id
          :where
-         [?e :ref/data ?d-id]
-         ]
+         [?e :ref/data ?d-id]]
        (d/db conn))
+
+  [#uuid "3197da4c-3806-544f-a62b-2f48383691d4"] [#uuid "37107994-69aa-5a8f-9fd9-5616298b993b"]
+
+  (-> #uuid "37107994-69aa-5a8f-9fd9-5616298b993b" load-key :output first)
 
   (d/q '[:find ?tau-m
          :where

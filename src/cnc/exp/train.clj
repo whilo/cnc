@@ -45,7 +45,7 @@
     (let [source-path (str (get-in @state [:config :source-base-path])
                            "model-nmsampling/code/ev_cd/train.py")]
       (def curr-exp
-        (let [params {:training-params {:h_count 10
+        (let [params {:training-params {:h_count 6
                                         :epochs 1,
                                         :dt 0.1,
                                         :burn_in_time 0.,
@@ -56,16 +56,17 @@
                                         :sim_setup_kwargs {:grng_seed 43
                                                            :rng_seeds_seed 43}}
                       :calibration-id #uuid "22f685d0-ea7f-53b5-97d7-c6d6cadc67d3"
-                      :data-id #uuid "3197da4c-3806-544f-a62b-2f48383691d4"
+                      :data-id #uuid "37107994-69aa-5a8f-9fd9-5616298b993b"
+                      #_#uuid "3197da4c-3806-544f-a62b-2f48383691d4"
                       :source-path source-path
-                      :args ["python" source-path]}]
+                      :args ["srun" "python" source-path]}]
           (try
             (run-experiment! (partial setup-training! store) gather-training! params)
             (catch Exception e
               (debug "experiment failed: " e)
               e))))))
 
-  (:output curr-exp)
+  (-> curr-exp :output :_history.h5)
 
   (println (-> curr-exp ex-data :process :out))
   (println (-> curr-exp :process :out))
