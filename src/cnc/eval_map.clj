@@ -71,6 +71,34 @@
 
    '(fn lif-sampling->datoms [conn params]
       (let [id (uuid params)
+            {git-id :git-commit-id,
+             output :output,
+             {:keys [v-bias h-bias weights]} :exp-params} params]
+        (db-transact conn [{:val/id (uuid output),
+                            :ref/rbm-weights (uuid weights),
+                            :ref/rbm-v-bias (uuid v-bias),
+                            :ref/rbm-h-bias (uuid h-bias),
+                            :git/commit-id git-id,
+                            :ref/trans-params id}]) conn))
+
+   (fn [conn params]
+     (let [id (uuid params)
+           {{dist :dist_joint_sim.h5
+             st :spike_trains.h5} :output
+             git-id :git-commit-id
+             {:keys [weights v-bias h-bias seed]} :exp-params} params]
+       #_(db-transact conn [{:val/id dist
+                           :lif/spike-trains st
+                           :sampling/seed seed
+                           :ref/rbm-weights (uuid weights)
+                           :ref/rbm-v-bias (uuid v-bias)
+                           :ref/rbm-h-bias (uuid h-bias)
+                           :git/commit-id git-id
+                           :ref/trans-params id}])
+       conn))
+
+   '(fn lif-sampling->datoms [conn params]
+      (let [id (uuid params)
             {{dist :dist_joint_sim.h5
               st :spike_trains.h5} :output
               git-id :git-commit-id
@@ -85,7 +113,7 @@
                             :ref/trans-params id}])
         conn))
 
-   (fn lif-sampling->datoms [conn params]
+   (fn [conn params]
      (let [id (uuid params)
            {{dist :dist_joint_sim.h5
              st :spike_trains.h5} :output

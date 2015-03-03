@@ -29,14 +29,16 @@
     (def sample-small
       (run-experiment! setup-sampling!
                        gather-sampling!
-                       {:weights [[1.5 -0.2 1.3 0.3]
-                                  [-0.2 -1.4 1.2 -0.1]
-                                  [0.1 -2.3 1.6 0.2]]
-                        :v-bias [-2.1 0.0 0.3 0.8]
-                        :h-bias [0.8 -1.2 0.3]
+                       {:weights [[1.0 -1.0]
+                                  [-1.0 1.0]]
+                        :v-bias [0.0 0.0]
+                        :h-bias [0.8 0.2]
                         :seed 42
                         :source-path source-path
                         :args ["srun" "lein-exec" "-p" source-path]})))
+
+
+  (frequencies (:output sample-small))
 
 
   (<!? (-get-in store ["weilbach@dopamine.kip" repo-id :branches "sample"]))
@@ -58,7 +60,7 @@
 
   ;; sample from stdp rbm
   ;; - extract sequence of weights from rbm
-  (<!? (-bget store ["weilbach@dopamine.kip" repo-id :branches "sample"]))
+  (<!? (-get-in store ["weilbach@dopamine.kip" repo-id :branches "sample"]))
   ;; - for each sample for some time in parallel
   ;; - calculate dist_join_sim over visible units
 

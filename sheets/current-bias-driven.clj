@@ -40,7 +40,7 @@
 (future (sh "okular" (str (<!? (-bget store (:training_overview.pdf blobs) :file)))))
 ;; @@
 ;; =>
-;;; {"type":"html","content":"<span class='clj-unkown'>#&lt;core$future_call$reify__6320@6a5b6956: :pending&gt;</span>","value":"#<core$future_call$reify__6320@6a5b6956: :pending>"}
+;;; {"type":"html","content":"<span class='clj-unkown'>#&lt;core$future_call$reify__6320@43f69f06: :pending&gt;</span>","value":"#<core$future_call$reify__6320@43f69f06: :pending>"}
 ;; <=
 
 ;; @@

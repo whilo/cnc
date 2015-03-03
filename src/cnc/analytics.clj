@@ -39,6 +39,14 @@
   (defn load-key [id]
     (<!? (-get-in store [id])))
 
+  ((load-key #uuid "37107994-69aa-5a8f-9fd9-5616298b993b") :exp-params)
+
+  {:weights [[2.0 -2.0]
+             [-2.0 2.0]],
+   :v-bias [0.0 0.0],
+   :h-bias [0.8 0.2]}
+
+
   (def conn (<!? (s/branch-value store mapped-eval
                                  (get-in @stage ["weilbach@dopamine.kip" repo-id])
                                  "train current rbms")))
@@ -70,12 +78,14 @@
          [?e :ref/trans-params ?vid]]
        (d/db conn))
 
-  (->> (d/q '[:find ?tp-id
+  (->> (d/q '[:find ?tp-id ?c
               :where
               [?spls :sampling/count ?c]
               [?spls :ref/trans-params ?tp-id]]
             (d/db conn))
        ffirst)
+
+
 
   (->> (d/q '[:find ?epochs
               :where
@@ -142,6 +152,4 @@
 
   (def weights-history (hdf5/read  (hdf5/get-dataset db "/weights_history")))
   (count weights-history)
-  (spit "/tmp/weights_history.json" (vec (get weights-history 110010)))
-
-  )
+  (spit "/tmp/weights_history.json" (vec (get weights-history 110010))))

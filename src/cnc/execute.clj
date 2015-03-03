@@ -28,21 +28,19 @@
          (re-find #"commit (\S+)")
          second)))
 
-(defn run-experiment! [pre-proc-fn post-proc-fn {:keys [args source-path] :as exp-params}]
+(defn run-experiment! [setup-fn {:keys [args source-path] :as exp-params}]
   (let [base-directory (str "experiments/" (java.util.Date.) "_" (subs (str (uuid)) 0 8) "/")
         git-id (git-commit source-path)
         _ (info "starting experiment in: " base-directory)
         _ (.mkdir (io/file base-directory))
-        _ (pre-proc-fn base-directory exp-params)
+        _ (setup-fn base-directory exp-params)
         proc (apply sh (concat args [base-directory] [:dir base-directory]))
         _ (when-not (= (:exit proc) 0)
             (throw (ex-info "Process execution failed."
                             {:process proc
                              :exp-params exp-params})))
-        output (post-proc-fn base-directory exp-params)
         _ (info "finished experiment in: " base-directory)]
-    (merge output
-           {:exp-params exp-params
+    (merge {:exp-params exp-params
             :base-directory base-directory
             :process proc}
            (when git-id
