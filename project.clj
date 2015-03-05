@@ -11,7 +11,7 @@
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]
                  [net.polyc0l0r/clj-hdf5 "0.2.2-SNAPSHOT"]
                  [cheshire "5.4.0"]
-                 [net.polyc0l0r/boltzmann "0.1.1"]
+                 [net.polyc0l0r/boltzmann "0.1.2-SNAPSHOT"]
                  [com.taoensso/nippy "2.7.1"]
                  [com.taoensso/timbre "3.3.1"]
                  [gorilla-repl "0.3.4" :exclusions [http-kit]]

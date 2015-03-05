@@ -53,27 +53,28 @@
           (let [source-path (str (get-in @state [:config :source-base-path])
                                  "model-nmsampling/code/ev_cd/train.py")]
             (let [params {:training-params {:h_count 6,
-                                            :epochs 5,
+                                            :epochs 4,
                                             :dt 0.1,
                                             :burn_in_time 0.,
                                             :phase_duration 100.0,
-                                            :learning_rate 1e-7,
+                                            :learning_rate 5e-8,
                                             :weight_recording_interval 100.0,
                                             :stdp_burnin 10.0,
                                             :sim_setup_kwargs {:grng_seed seed
                                                                :rng_seeds_seed seed}}
                           :calibration-id #uuid "22f685d0-ea7f-53b5-97d7-c6d6cadc67d3"
-                          :data-id #uuid "37107994-69aa-5a8f-9fd9-5616298b993b" ;; strong XOR
+                          :data-id #uuid "00fb4927-1ef8-549d-b41f-afbac6463014" ;; strong sym XOR
+                          #_#uuid "37107994-69aa-5a8f-9fd9-5616298b993b" ;; strong XOR
                           #_#uuid "29175e59-4df7-5229-9257-757b74f7af1b" ;; weaker XOR
                           #_#uuid "3197da4c-3806-544f-a62b-2f48383691d4"
                           :source-path source-path
-                          :args ["srun" "python" source-path]}]
+                          :args ["srun-log" "python" source-path]}]
               (try
-                (run-experiment! (partial setup-training! store) gather-training! params)
+                (run-experiment! (partial setup-training! store) params)
                 (catch Exception e
                   (debug "experiment failed: " e)
                   e))))))
-      (range 50 60))))
+      (range 50 55))))
 
   (println (-> curr-exp ex-data :process :err))
   (println (-> curr-exp :process :out))
@@ -104,8 +105,9 @@
 
   ;; TODO protect from committing dangling value uuids
   (doseq [exp (map deref curr-exps)]
-    (let [tparams (-> exp :exp-params :training-params)]
-      (doseq [b (:new-blobs exp)]
+    (let [tparams (-> exp :exp-params :training-params)
+          res (gather-training! (:base-directory exp) nil)]
+      (doseq [b (:new-blobs res)]
         (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train current rbms"] b)))
 
       (when-not (<!? (-exists? store (uuid tparams)))
@@ -115,15 +117,12 @@
 
       (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
                        (find-fn 'train-ev-cd->datoms)
-                       (dissoc exp
-                               :process
-                               :new-blobs
-                               :new-values)))))
+                       (dissoc exp :process))))
+    (println "transacted exp: " (uuid (dissoc exp :process)))
+    (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms"}}})))
+
 
   (uuid (dissoc curr-exp :process :new-blobs :new-values))
-
-
-
 
 
   (swap! stage update-in ["weilbach@dopamine.kip" repo-id :transactions] assoc "train current rbms" [])

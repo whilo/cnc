@@ -15,24 +15,24 @@
 
 
 (comment
-  (require '[cnc.core :refer [state]]
-           '[konserve.protocols :refer [-get-in]]
-           '[geschichte.platform :refer [<!?]]
-           '[hasch.core :refer [uuid]])
-  (def stage (get-in @state [:repo :stage]))
-  (def store (get-in @state [:repo :store]))
-  (def repo-id (get-in @state [:repo :id]))
+  (do
+    (require '[cnc.core :refer [state]]
+             '[konserve.protocols :refer [-get-in]]
+             '[geschichte.platform :refer [<!?]]
+             '[hasch.core :refer [uuid]])
+    (def stage (get-in @state [:repo :stage]))
+    (def store (get-in @state [:repo :store]))
+    (def repo-id (get-in @state [:repo :id])))
 
 
   (let [source-path (str (get-in @state [:config :source-base-path])
                          "rbm-exps/src/rbm_exps/sample.clj")]
     (def sample-small
       (run-experiment! setup-sampling!
-                       gather-sampling!
                        {:weights [[1.0 -1.0]
                                   [-1.0 1.0]]
                         :v-bias [0.0 0.0]
-                        :h-bias [0.8 0.2]
+                        :h-bias [0.0 0.0]
                         :seed 42
                         :source-path source-path
                         :args ["srun" "lein-exec" "-p" source-path]})))
@@ -52,7 +52,11 @@
 
   (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "sample"]
                    (find-fn 'sampling->datoms)
-                   sample-small))
+                   (merge sample-small
+                          (gather-sampling! (:base-directory sample-small) nil))))
+
+  (uuid (merge sample-small (gather-sampling! (:base-directory sample-small) nil)))
+
 
   (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"sample"}}}))
 
