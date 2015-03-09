@@ -1,5 +1,5 @@
 (ns cnc.exp.train
-  (:require [cnc.execute :refer [run-experiment! slurp-bytes write-json git-commit]]
+  (:require [cnc.execute :refer [run-experiment! slurp-bytes write-json git-commit gather-results!]]
             [cnc.eval-map :refer [find-fn]]
             [geschichte.stage :as s]
             [geschichte.platform :refer [<!?]]
@@ -17,24 +17,7 @@
                                               data-id calibration-id]}]
   (write-json base-dir "training_params.json" training-params)
   (write-json base-dir "calibration.json" (<!? (-get-in store [calibration-id :output])))
-  (write-json base-dir "data.json" (<!? (-get-in store [data-id :output]))))
-
-(defn gather-training! [base-directory _]
-  (let [blob-names ["bias_bio_history.h5"
-                    "weight_bio_history.h5"
-                    "bias_theo_history.h5"
-                    "bias_theo_history.pdf"
-                    "weight_theo_history.h5"
-                    "weight_theo_history.pdf"
-                    "dist_joint_sim.h5"
-                    "train.log"]
-        blobs (doall (map #(->> % (str base-directory) slurp-bytes)
-                          blob-names))]
-    {:output (into {} (map (fn [n b] [(keyword n)
-                                     (uuid b)])
-                           blob-names blobs))
-     :new-blobs blobs}))
-
+  (write-json base-dir "data.json" (<!? (-bget store data-id #(-> % :input-stream slurp read-string)))))
 
 (comment
   (do
@@ -53,17 +36,20 @@
           (let [source-path (str (get-in @state [:config :source-base-path])
                                  "model-nmsampling/code/ev_cd/train.py")]
             (let [params {:training-params {:h_count 6,
-                                            :epochs 4,
+                                            :epochs 10,
                                             :dt 0.1,
                                             :burn_in_time 0.,
                                             :phase_duration 100.0,
-                                            :learning_rate 5e-8,
+                                            :learning_rate 1e-6,
                                             :weight_recording_interval 100.0,
                                             :stdp_burnin 10.0,
                                             :sim_setup_kwargs {:grng_seed seed
                                                                :rng_seeds_seed seed}}
                           :calibration-id #uuid "22f685d0-ea7f-53b5-97d7-c6d6cadc67d3"
-                          :data-id #uuid "00fb4927-1ef8-549d-b41f-afbac6463014" ;; strong sym XOR
+                          :data-id
+                          #uuid "0527b8c6-db13-5275-862e-22a6e940c7e9"
+                          ;; not usable anymore
+                          #_#uuid "00fb4927-1ef8-549d-b41f-afbac6463014" ;; strong sym XOR
                           #_#uuid "37107994-69aa-5a8f-9fd9-5616298b993b" ;; strong XOR
                           #_#uuid "29175e59-4df7-5229-9257-757b74f7af1b" ;; weaker XOR
                           #_#uuid "3197da4c-3806-544f-a62b-2f48383691d4"
@@ -74,7 +60,7 @@
                 (catch Exception e
                   (debug "experiment failed: " e)
                   e))))))
-      (range 50 55))))
+      (range 50 60))))
 
   (println (-> curr-exp ex-data :process :err))
   (println (-> curr-exp :process :out))
@@ -104,22 +90,30 @@
 
 
   ;; TODO protect from committing dangling value uuids
-  (doseq [exp (map deref curr-exps)]
-    (let [tparams (-> exp :exp-params :training-params)
-          res (gather-training! (:base-directory exp) nil)]
-      (doseq [b (:new-blobs res)]
-        (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train current rbms"] b)))
+  (doseq [base-dir (map (comp :base-directory deref) curr-exps)]
+    (when base-dir
+        (let [res (gather-results! base-dir ["bias_bio_history.h5"
+                                             "weight_bio_history.h5"
+                                             "bias_theo_history.h5"
+                                             "bias_theo_history.pdf"
+                                             "weight_theo_history.h5"
+                                             "weight_theo_history.pdf"
+                                             "dist_joint_sim.h5"
+                                             "train.log"])
+              tparams (-> res :exp-params :training-params)]
+          (doseq [b (:new-blobs res)]
+            (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train current rbms"] b)))
 
-      (when-not (<!? (-exists? store (uuid tparams)))
-        (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
-                         (find-fn 'add-training-params)
-                         tparams)))
+          (when-not (<!? (-exists? store (uuid tparams)))
+            (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
+                             (find-fn 'add-training-params)
+                             tparams)))
 
-      (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
-                       (find-fn 'train-ev-cd->datoms)
-                       (dissoc exp :process))))
-    (println "transacted exp: " (uuid (dissoc exp :process)))
-    (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms"}}})))
+          (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
+                           (find-fn 'train-ev-cd->datoms)
+                           res))
+          (println "transacted exp: " (uuid res)))
+        (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms"}}}))))
 
 
   (uuid (dissoc curr-exp :process :new-blobs :new-values))

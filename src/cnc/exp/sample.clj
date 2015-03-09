@@ -1,5 +1,5 @@
 (ns cnc.exp.sample
-  (:require [cnc.execute :refer [run-experiment!]]
+  (:require [cnc.execute :refer [run-experiment! gather-results!]]
             [cnc.eval-map :refer [find-fn]]
             [geschichte.stage :as s]
             [clojure.java.io :as io]
@@ -8,7 +8,7 @@
 (timber/refer-timbre)
 
 (defn setup-sampling! [base-directory exp-params]
-  (spit (str base-directory "exp-params.edn") exp-params))
+  #_(spit (str base-directory "exp-params.edn") exp-params))
 
 (defn gather-sampling! [base-directory _]
   {:output (read-string (slurp (str base-directory "samples.edn")))})
@@ -29,8 +29,8 @@
                          "rbm-exps/src/rbm_exps/sample.clj")]
     (def sample-small
       (run-experiment! setup-sampling!
-                       {:weights [[1.0 -1.0]
-                                  [-1.0 1.0]]
+                       {:weights [[4.0 -4.0]
+                                  [-4.0 4.0]]
                         :v-bias [0.0 0.0]
                         :h-bias [0.0 0.0]
                         :seed 42
@@ -50,10 +50,15 @@
 
 
 
-  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "sample"]
-                   (find-fn 'sampling->datoms)
-                   (merge sample-small
-                          (gather-sampling! (:base-directory sample-small) nil))))
+
+  (let [res (gather-results! (:base-directory sample-small)
+                             ["samples.edn"])]
+    (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "sample"] (-> res :new-blobs first)))
+    (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "sample"]
+                     (find-fn 'sampling->datoms)
+                     (dissoc res :new-blobs))))
+
+  (s/abort-transactions stage ["weilbach@dopamine.kip" repo-id "sample"])
 
   (uuid (merge sample-small (gather-sampling! (:base-directory sample-small) nil)))
 

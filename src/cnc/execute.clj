@@ -33,6 +33,10 @@
         git-id (git-commit source-path)
         _ (info "starting experiment in: " base-directory)
         _ (.mkdir (io/file base-directory))
+        _ (spit (str base-directory "exp-params.edn") (merge exp-params
+                                                             (when git-id
+                                                               {:git-commit-id git-id})))
+
         _ (setup-fn base-directory exp-params)
         proc (apply sh (concat args [base-directory] [:dir base-directory]))
         _ (when-not (= (:exit proc) 0)
@@ -40,16 +44,23 @@
                             {:process proc
                              :exp-params exp-params})))
         _ (info "finished experiment in: " base-directory)]
-    (merge {:exp-params exp-params
-            :base-directory base-directory
-            :process proc}
-           (when git-id
-             {:git-commit-id git-id}))))
+    {:exp-params exp-params
+     :base-directory base-directory
+     :process proc}))
+
+(defn gather-results! [base-directory blob-names]
+  (let [blobs (doall (map #(->> % (str base-directory) slurp-bytes)
+                          blob-names))]
+    {:exp-params (read-string (slurp (str base-directory "exp-params.edn")))
+     :base-directory base-directory
+     :output (into {} (map (fn [n b] [(keyword n)
+                                     (uuid b)])
+                           blob-names blobs))
+     :new-blobs blobs}))
 
 
 (comment
   (sh "hostname")
-
 
   (def t (Thread. (fn [] (println "alive") (Thread/sleep (* 60 1000)))))
   (.setDaemon t false)

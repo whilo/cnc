@@ -8,7 +8,6 @@
             [geschichte.stage :as s]
             [geschichte.p2p.fetch :refer [fetch]]
             [geschichte.p2p.hash :refer [ensure-hash]]
-            [geschichte.p2p.publish-on-request :refer [publish-on-request]]
             [geschichte.p2p.block-detector :refer [block-detector]]
             [geschichte.platform :refer [create-http-kit-handler! <!? start]]
             [clojure.core.async :refer [>!!]]
@@ -24,13 +23,11 @@
                                  (comp (partial block-detector :peer-core)
                                        (partial fetch store)
                                        ensure-hash
-                                       (partial publish-on-request store)
                                        (partial block-detector :p2p-surface)))
         #_(client-peer "benjamin"
                        store
                        (comp (partial fetch store)
-                             ensure-hash
-                             (partial publish-on-request store)))
+                             ensure-hash))
         stage (<!? (s/create-stage! user peer-server eval))
         res {:store store
              :peer peer-server
