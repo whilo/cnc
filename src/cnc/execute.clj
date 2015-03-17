@@ -29,7 +29,8 @@
          second)))
 
 (defn run-experiment! [setup-fn {:keys [args source-path] :as exp-params}]
-  (let [base-directory (str "experiments/" (java.util.Date.) "_" (subs (str (uuid)) 0 8) "/")
+  (let [date (java.util.Date.)
+        base-directory (str "experiments/" date "_" (subs (str (uuid)) 0 8) "/")
         git-id (git-commit source-path)
         _ (info "starting experiment in: " base-directory)
         _ (.mkdir (io/file base-directory))
@@ -46,6 +47,7 @@
         _ (info "finished experiment in: " base-directory)]
     {:exp-params exp-params
      :base-directory base-directory
+     :date date
      :process proc}))
 
 (defn gather-results! [base-directory blob-names]

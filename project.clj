@@ -16,6 +16,7 @@
                  [com.taoensso/timbre "3.3.1"]
                  [gorilla-repl "0.3.4" :exclusions [http-kit]]
                  [gg4clj "0.1.0"]
+                 [quil "2.2.5"]
 
                  [net.polyc0l0r/geschichte "0.1.0-SNAPSHOT"]]
   :jvm-opts ["-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n" "-Xmx6g"]

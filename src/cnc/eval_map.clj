@@ -14,9 +14,8 @@
 ;; TODO database/value per branch
 
 (defn db-transact [conn txs]
-  (debug "TRANSACT DATOMIC:"
-         @(d/transact conn (map #(assoc % :db/id (d/tempid :db.part/user))
-                                txs)))
+  (d/transact conn (map #(assoc % :db/id (d/tempid :db.part/user))
+                         txs))
   conn)
 
 (def eval-map
@@ -88,13 +87,13 @@
              git-id :git-commit-id
              {:keys [weights v-bias h-bias seed]} :exp-params} params]
        #_(db-transact conn [{:val/id dist
-                           :lif/spike-trains st
-                           :sampling/seed seed
-                           :ref/rbm-weights (uuid weights)
-                           :ref/rbm-v-bias (uuid v-bias)
-                           :ref/rbm-h-bias (uuid h-bias)
-                           :git/commit-id git-id
-                           :ref/trans-params id}])
+                             :lif/spike-trains st
+                             :sampling/seed seed
+                             :ref/rbm-weights (uuid weights)
+                             :ref/rbm-v-bias (uuid v-bias)
+                             :ref/rbm-h-bias (uuid h-bias)
+                             :git/commit-id git-id
+                             :ref/trans-params id}])
        conn))
 
    '(fn lif-sampling->datoms [conn params]
@@ -267,6 +266,8 @@
                                          (float v)
                                          (= k :sim_setup_kwargs)
                                          (:rng_seeds_seed v)
+                                         (= k :stdp_burnin)
+                                         (float v)
                                          :else v)]))
                            (into {}))]
        (db-transact conn [(assoc namespaced :val/id (uuid params))]))
@@ -276,10 +277,12 @@
       (let [id (uuid params)
             {{neuron-params :neuron-params
               training-params :training-params
+              git-id :git-commit-id
               data-id :data-id} :exp-params
-              git-id :git-commit-id} params]
+              topic :topic} params]
         (db-transact conn [{:val/id (uuid (:output params))
                             :git/commit-id git-id
+                            :topic topic
                             :ref/data data-id
                             :ref/neuron-params (uuid neuron-params)
                             :ref/training-params (uuid training-params)
@@ -290,27 +293,66 @@
      (let [id (uuid params)
            {{neuron-params :neuron-params
              training-params :training-params
+             base-dir :base-directrory
+             git-id :git-commit-id
              data-id :data-id} :exp-params
-             git-id :git-commit-id} params]
+             topic :topic} params]
        (db-transact conn [{:val/id (uuid (:output params))
                            :git/commit-id git-id
+                           :topic topic
+                           :base-directory base-dir
                            :ref/data data-id
                            :ref/neuron-params (uuid neuron-params)
                            :ref/training-params (uuid training-params)
                            :ref/trans-params id}])
-       conn))})
+       conn))
 
-(defn mapped-eval [code]
-  (if (eval-map code)
-    (eval-map code)
-    (do (debug "eval-map didn't match:" code)
-        (eval code))))
+   '(fn train-ev-cd->datoms [conn params]
+      (let [id (uuid params)
+            {{neuron-params :neuron-params,
+              training-params :training-params,
+              data-id :data-id} :exp-params,
+              git-id :git-commit-id} params]
+        (db-transact conn [{:val/id (uuid (:output params)),
+                            :git/commit-id git-id,
+                            :ref/data data-id,
+                            :ref/neuron-params (uuid neuron-params),
+                            :ref/training-params (uuid training-params),
+                            :ref/trans-params id}])
+        conn))
+
+
+
+   (fn [conn params]
+     (let [id (uuid params)
+           {{neuron-params :neuron-params,
+             training-params :training-params,
+             data-id :data-id
+             git-id :git-commit-id} :exp-params} params]
+       (db-transact conn [(merge
+                           {:val/id (uuid (:output params)),
+                            :ref/data data-id,
+                            :ref/neuron-params (uuid neuron-params),
+                            :ref/training-params (uuid training-params),
+                            :ref/trans-params id}
+                           (when git-id
+                             {:git/commit-id git-id}))])
+       conn))})
 
 
 (defn find-fn [name]
   (first (filter (fn [[_ fn-name]]
                    (= name fn-name))
                  (keys eval-map))))
+
+
+(defn mapped-eval [code]
+  (if (eval-map code)
+    (eval-map code)
+    (do (debug "eval-map didn't match:" code)
+        (fn [old params]
+          #_(debug "ignoring params:" params)
+          old))))
 
 
 (comment

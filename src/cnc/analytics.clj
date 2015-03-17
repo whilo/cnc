@@ -5,7 +5,7 @@
             [cnc.eval-map :refer [eval-map mapped-eval]]
             [datomic.api :as d]
             [geschichte.platform :refer [<!?]]
-            [geschichte.stage :as s]
+            [geschichte.realize :refer [branch-value]]
             [hasch.core :refer [uuid]]
             [konserve.protocols :refer [-get-in -bget]]
             [taoensso.timbre :as timber]))
@@ -14,7 +14,7 @@
 
 (defn get-hdf5-tensor [store id path]
   (let [db (hdf5/open (<!? (-bget store id :file)))
-        m (mat/matrix (hdf5/read  (hdf5/get-dataset db path)))
+        m (hdf5/read (hdf5/get-dataset db path))
         _ (hdf5/close db)]
     m))
 
@@ -24,20 +24,36 @@
          (map (fn [[k v]] [k (float (/ v c))]))
          (into {}))))
 
+(defn drop-half [elems]
+  (let [c (count elems)]
+    (when-not (= (mod c 2) 0)
+      (throw (ex-info "Odd number of elements.")))
+    (drop (/ c 2) elems)))
 
-(comment
+
+(do
   (require '[cnc.core :refer [state]]
            '[konserve.protocols :refer [-get-in -bget -exists?]]
            '[geschichte.platform :refer [<!?]])
   (def stage (get-in @state [:repo :stage]))
   (def store (get-in @state [:repo :store]))
-  (def repo-id (get-in @state [:repo :id]))
+  (def repo-id (get-in @state [:repo :id])))
+
+(defn conn [branch]
+  (<!? (branch-value store mapped-eval
+                     (get-in @stage ["weilbach@dopamine.kip" repo-id])
+                     branch)))
+
+(defn load-key [& path]
+    (<!? (-get-in store path)))
+
+(comment
+
 
   (aprint.core/aprint s/commit-value-cache)
 
 
-  (defn load-key [id]
-    (<!? (-get-in store [id])))
+
 
   ((load-key #uuid "37107994-69aa-5a8f-9fd9-5616298b993b") :exp-params)
 
@@ -47,9 +63,7 @@
    :h-bias [0.8 0.2]}
 
 
-  (def conn (<!? (s/branch-value store mapped-eval
-                                 (get-in @stage ["weilbach@dopamine.kip" repo-id])
-                                 "train current rbms")))
+
 
   (clojure.pprint/pprint (seq (d/datoms (d/db conn) :eavt)))
   (clojure.pprint/pprint conn)
@@ -125,7 +139,7 @@
   (clojure.pprint/pprint
    (<!? (s/commit-history-values store
                                  (get-in @stage ["weilbach@dopamine.kip" repo-id :state :causal-order])
-                                 (first (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches "train small rbms"]))
+                                 (first (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches "master"]))
                                  )))
 
   (get-in @stage [:config :subs])

@@ -2,8 +2,9 @@
   (:require [cnc.execute :refer [run-experiment! slurp-bytes write-json git-commit gather-results!]]
             [cnc.eval-map :refer [find-fn]]
             [geschichte.stage :as s]
+            [geschichte.realize :as real]
             [geschichte.platform :refer [<!?]]
-            [konserve.protocols :refer [-exists? -get-in -bget]]
+            [konserve.protocols :refer [-exists? -get-in -bget -update-in -assoc-in]]
             [hasch.core :refer [uuid]]
             [clojure.core.async :refer [>!!]]
             [clojure.java.io :as io]
@@ -22,37 +23,37 @@
 (comment
   (do
     (require '[cnc.core :refer [state]]
-             '[konserve.protocols :refer [-get-in -bget]]
+             '[konserve.protocols :refer [-get-in -bget -exists?]]
              '[geschichte.platform :refer [<!?]])
     (def stage (get-in @state [:repo :stage]))
     (def store (get-in @state [:repo :store]))
     (def repo-id (get-in @state [:repo :id])))
 
+
   (def curr-exps
     (doall
      (map
-      (fn [seed]
+      (fn [rate]
         (future
           (let [source-path (str (get-in @state [:config :source-base-path])
-                                 "model-nmsampling/code/ev_cd/train.py")]
-            (let [params {:training-params {:h_count 6,
-                                            :epochs 10,
+                                 "model-nmsampling/code/ev_cd/train.py")
+                seed 42]
+            (let [params {:training-params {:h_count 10,
+                                            :epochs 20000, ;; TODO
                                             :dt 0.1,
                                             :burn_in_time 0.,
                                             :phase_duration 100.0,
-                                            :learning_rate 1e-6,
+                                            :learning_rate rate,
                                             :weight_recording_interval 100.0,
-                                            :stdp_burnin 10.0,
+                                            :stdp_burnin 5.0,
                                             :sim_setup_kwargs {:grng_seed seed
                                                                :rng_seeds_seed seed}}
                           :calibration-id #uuid "22f685d0-ea7f-53b5-97d7-c6d6cadc67d3"
                           :data-id
-                          #uuid "0527b8c6-db13-5275-862e-22a6e940c7e9"
-                          ;; not usable anymore
-                          #_#uuid "00fb4927-1ef8-549d-b41f-afbac6463014" ;; strong sym XOR
-                          #_#uuid "37107994-69aa-5a8f-9fd9-5616298b993b" ;; strong XOR
-                          #_#uuid "29175e59-4df7-5229-9257-757b74f7af1b" ;; weaker XOR
-                          #_#uuid "3197da4c-3806-544f-a62b-2f48383691d4"
+                          #_#uuid "0bd17cd8-237b-5ecd-987a-033ca22ea6f1" ;; 2x2 bars
+                          #uuid "0b619370-6716-5ae8-89b6-9c38b4e11e94" ;; 3x3 bars
+                          #_#uuid "18127501-df3c-578d-8863-a3e17f2a61a7" ;; 5x5 digits 3,4,5
+                          #_#uuid "0527b8c6-db13-5275-862e-22a6e940c7e9" ;; strong XOR
                           :source-path source-path
                           :args ["srun-log" "python" source-path]}]
               (try
@@ -60,7 +61,11 @@
                 (catch Exception e
                   (debug "experiment failed: " e)
                   e))))))
-      (range 50 60))))
+      #_[50 100 200 300 400 500 1000]
+      [1e-5 5e-5 1e-6 5e-6 1e-6 5e-7 1e-7 1e-8 5e-8] #_(range 50 60))))
+
+
+
 
   (println (-> curr-exp ex-data :process :err))
   (println (-> curr-exp :process :out))
@@ -70,7 +75,6 @@
   (clojure.pprint/pprint (dissoc curr-exp :new-blobs :new-values :process))
 
   (<!? (-get-in store [(uuid (dissoc curr-exp :new-blobs :new-values :process))]))
-
 
 
   (<!? (-get-in store [#uuid "181516fb-226e-5f0b-81b8-09eadddc4f9a"]))
@@ -89,48 +93,84 @@
                               :sampling_time 1e6})]))
 
 
+
+  (def base-dirs (map #(str "experiments/" % "/")
+                      (let [f (io/file "experiments/")]
+                        (filter #(.contains % "Fri Mar 13 11") (.list f)))))
+
+
+
+  (clojure.pprint/pprint (mapv #(-> (gather-results! % [
+                                                        "bias_theo_history.h5"
+                                                        "weight_theo_history.h5"
+                                                        ])
+                                    (dissoc :new-blobs))
+                               base-dirs))
+
+
+  (mapv #(-> (gather-results! % [
+                                 "bias_theo_history.h5"
+                                 "weight_theo_history.h5"
+                                 ])
+             (dissoc :new-blobs))
+        base-dirs)
+
+
+
+
   ;; TODO protect from committing dangling value uuids
-  (doseq [base-dir (map (comp :base-directory deref) curr-exps)]
+  (doseq [base-dir base-dirs #_(map (comp :base-directory deref) curr-exps)]
     (when base-dir
-        (let [res (gather-results! base-dir ["bias_bio_history.h5"
-                                             "weight_bio_history.h5"
-                                             "bias_theo_history.h5"
-                                             "bias_theo_history.pdf"
-                                             "weight_theo_history.h5"
-                                             "weight_theo_history.pdf"
-                                             "dist_joint_sim.h5"
-                                             "train.log"])
-              tparams (-> res :exp-params :training-params)]
-          (doseq [b (:new-blobs res)]
-            (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train current rbms"] b)))
+      (let [res (gather-results! base-dir ["bias_bio_history.h5"
+                                           "weight_bio_history.h5"
+                                           "bias_theo_history.h5"
+                                           "weight_theo_history.h5"
+                                           "dist_joint_sim.h5"
+                                           "train.log"
+                                           #_"srun.log"
+                                           ])
+            res (assoc res :topic "sweep hidden-unit count")
+            tparams (-> res :exp-params :training-params)]
+        (doseq [b (:new-blobs res)]
+          (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train current rbms4"] b)))
 
-          (when-not (<!? (-exists? store (uuid tparams)))
-            (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
-                             (find-fn 'add-training-params)
-                             tparams)))
+        (when-not (<!? (-exists? store (uuid tparams)))
+          (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms4"]
+                           (find-fn 'add-training-params)
+                           tparams)))
 
-          (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
-                           (find-fn 'train-ev-cd->datoms)
-                           res))
-          (println "transacted exp: " (uuid res)))
-        (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms"}}}))))
+        (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms4"]
+                         (find-fn 'train-ev-cd->datoms)
+                         (dissoc res :new-blobs)))
+        (println "transacted exp: " (uuid (dissoc res :new-blobs))))
+      (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms4"}}}))))
 
 
+  (clojure.pprint/pprint (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches]))
   (uuid (dissoc curr-exp :process :new-blobs :new-values))
 
 
   (swap! stage update-in ["weilbach@dopamine.kip" repo-id :transactions] assoc "train current rbms" [])
-  (get-in @stage ["weilbach@dopamine.kip" repo-id :transactions "train current rbms"])
+  (keys (get-in @stage ["weilbach@dopamine.kip" repo-id :state]))
+
+  (<!? (-update-in store ["weilbach@dopamine.kip" repo-id] #(dissoc % :state)))
+  (<!? (-assoc-in store ["weilbach@dopamine.kip" repo-id :branches "train current rbms2"] #{#uuid "3cf62813-8e88-5feb-b968-eae428a7f93e"} ))
 
 
-  (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms"}}}))
+  (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train current rbms4"] digits))
+
+
+
+  (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms4"}}}))
 
   (clojure.pprint/pprint (-> curr-exp (dissoc :process)))
 
   (def hist
-    (<!? (s/commit-history-values store
-                                  (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :causal-order])
-                                  (first (get-in @stage ["weilbach@dopamine.kip" repo-id :meta :branches "train current rbms"])))))
+    (<!? (real/commit-history-values store
+                                     (get-in @stage ["weilbach@dopamine.kip" repo-id :state :causal-order])
+                                     (first (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches "train current rbms4"])))))
+
+  (clojure.pprint/pprint hist)
 
   (def digit-data [[0 1 1 1 0
                     0 0 0 0 1
@@ -148,68 +188,20 @@
                     0 0 0 1 0
                     1 1 1 0 0]])
 
-  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
-                   (find-fn 'add-training-params)
-                   {:h_count 5
-                    :epochs 10,
-                    :dt 0.01,
-                    :burn_in_time 0.,
-                    :phase_duration 100.0,
-                    :learning_rate 1e-6,
-                    :weight_recording_interval 100.0,
-                    :stdp_burnin 10.0,
-                    :sampling_time 1e6}))
-
-  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
-                   (find-fn 'data->datoms)
-                   {:output digit-data
-                    :name "5x5 digits 3,4,5"}))
-
-  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
-                   (find-fn 'data->datoms)
-                   {:output [[0] [1]]
-                    :name "Minimal binary data [[0],[1]]."}))
-
-
-  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
-                   (find-fn 'data->datoms)
-                   {:output (read-string (slurp "/tmp/data.json"))
-                    :name "Small unsymmetric distribution."}))
-
-
-  (do
-    (time (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms"}}})))
-    nil)
-
-
-  (future
-    (let [source-path (str (get-in @state [:config :source-base-path]) "model-nmsampling/code/ev_cd/stdp.py")
-          training-params {:h_count 30
-                           :epochs 2000,
-                           :dt 0.1,
-                           :burn_in_time 0.,
-                           :phase_duration 100.0,
-                           :learning_rate 1e-6,
-                           :weight_recording_interval 1e4,
-                           :stdp_burnin 10.0,
-                           :sampling_time 1e6}]
-      (def digit-exp
-        (try
-          (run-experiment! (partial setup-training! store)
-                           gather-training!
-                           {:neuron-params neuron-params
-                            :training-params training-params
-                            :calibration-id #uuid "1070c715-96af-5a38-856f-0ef985bda116"
-                            :data-id #uuid "04501ad6-45f4-5880-a3ee-ce91c748f933"
-                            :source-path source-path
-                            :args ["srun" "python" source-path]})
-          (catch Exception e
-            e)))))
-
-  (<!? (-get-in store [#uuid "04501ad6-45f4-5880-a3ee-ce91c748f933"]))
-
-  (clojure.pprint/pprint (-> digit-exp #_(dissoc :process)))
+  (spit "/tmp/digits" digit-data)
+  (def digits (slurp-bytes "/tmp/digits"))
 
 
 
-  (write-json  (<!? (-get-in store [#uuid "1070c715-96af-5a38-856f-0ef985bda116" :output]))))
+  (spit "/tmp/bars" (str [[1 0 0
+                           1 0 0
+                           1 0 0]
+                          [0 0 1
+                           0 0 1
+                           0 0 1]
+                          [1 1 1
+                           0 0 0
+                           0 0 0]]))
+  (def bars (slurp-bytes "/tmp/bars"))
+
+  )

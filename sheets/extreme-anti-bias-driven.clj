@@ -126,13 +126,6 @@ experiment
 ;; <=
 
 ;; @@
-(map (fn [exp-id]
-       (let [out (:output (<! (-get-in store [exp-id])))]
-         out) 
-     [])
-;; @@
-
-;; @@
 (def final-weights (clojure.core/partition 2 (drop 4 [-1.02762711  2.15125585 -0.34526947 -3.49845243 -1.02762711 -0.34526947
   2.15125585 -3.49845243]
 )))
@@ -263,11 +256,12 @@ experiment
 ;; <=
 
 ;; @@
-(def trad-rbm (train-cd (create-theoretical-rbm 2 6) samples :epochs 1 :seed 52 :learning-rate 0.01))
+(def back-ch (chan 10001))
+(def trad-rbm (train-cd (create-theoretical-rbm 2 6) 
+                        samples 
+                        :epochs 1 :seed 52 
+                        :learning-rate 0.01 :back-ch back-ch))
 ;; @@
-;; =>
-;;; {"type":"html","content":"<span class='clj-var'>#&#x27;less-extreme-anti-bias-driven/trad-rbm</span>","value":"#'less-extreme-anti-bias-driven/trad-rbm"}
-;; <=
 
 ;; @@
 (def trad-samples (sample-gibbs trad-rbm 1e4))
@@ -297,7 +291,8 @@ experiment
 ;; <=
 
 ;; @@
-(def trained-rbms (map #(train-cd (create-theoretical-rbm 2 6) samples :epochs 1 :seed % :learning-rate 0.01) (range 10)))
+(def back-chan (chan 10001))
+(def trained-rbms (map #(train-cd (create-theoretical-rbm 2 6) samples :epochs 1 :seed % :learning-rate 0.01 :back-chan back-chan)) (range 10)))
 ;; @@
 ;; =>
 ;;; {"type":"html","content":"<span class='clj-var'>#&#x27;less-extreme-anti-bias-driven/trained-rbms</span>","value":"#'less-extreme-anti-bias-driven/trained-rbms"}

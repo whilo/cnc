@@ -29,8 +29,8 @@
                          "rbm-exps/src/rbm_exps/sample.clj")]
     (def sample-small
       (run-experiment! setup-sampling!
-                       {:weights [[4.0 -4.0]
-                                  [-4.0 4.0]]
+                       {:weights [[1.0 -1.0]
+                                  [-1.0 1.0]]
                         :v-bias [0.0 0.0]
                         :h-bias [0.0 0.0]
                         :seed 42
@@ -50,6 +50,8 @@
 
 
 
+  (uuid (-> (gather-results! (:base-directory sample-small)
+                             ["samples.edn"]) :new-blobs first))
 
   (let [res (gather-results! (:base-directory sample-small)
                              ["samples.edn"])]
@@ -67,6 +69,8 @@
 
 
 
+
+
   ;; sample from stdp rbm
   ;; - extract sequence of weights from rbm
   (<!? (-get-in store ["weilbach@dopamine.kip" repo-id :branches "sample"]))
@@ -75,10 +79,9 @@
 
 
 
+  (<!? (-get-in store [#uuid "24189423-3ecb-5195-897b-9bfee2df710d"]))
 
 
 
 
-  (println *command-line-args*)
-
-  )
+  (println *command-line-args*))
