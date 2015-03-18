@@ -33,17 +33,18 @@
   (def curr-exps
     (doall
      (map
-      (fn [rate]
+      (fn [phase-duration]
         (future
           (let [source-path (str (get-in @state [:config :source-base-path])
                                  "model-nmsampling/code/ev_cd/train.py")
                 seed 42]
             (let [params {:training-params {:h_count 10,
-                                            :epochs 20000, ;; TODO
+                                            :epochs (int (/ (* 20000 100)
+                                                            phase-duration)) ;; TODO
                                             :dt 0.1,
                                             :burn_in_time 0.,
-                                            :phase_duration 100.0,
-                                            :learning_rate rate,
+                                            :phase_duration (float phase-duration)
+                                            :learning_rate 1e-7,
                                             :weight_recording_interval 100.0,
                                             :stdp_burnin 5.0,
                                             :sim_setup_kwargs {:grng_seed seed
@@ -61,8 +62,41 @@
                 (catch Exception e
                   (debug "experiment failed: " e)
                   e))))))
-      #_[50 100 200 300 400 500 1000]
-      [1e-5 5e-5 1e-6 5e-6 1e-6 5e-7 1e-7 1e-8 5e-8] #_(range 50 60))))
+      [1000 2000 5000 10000]
+      #_[1e-5 5e-5 1e-6 5e-6 1e-6 5e-7 1e-7 1e-8 5e-8] #_(range 50 60))))
+
+  (println (clojure.java.shell/sh "ps"))
+
+  (def curr-exp
+    (future
+      (let [source-path (str (get-in @state [:config :source-base-path])
+                             "model-nmsampling/code/ev_cd/train.py")
+            seed 42
+            phase-duration 1000]
+        (let [params {:training-params {:h_count 5,
+                                        :epochs (int (/ (* 10000 100)
+                                                        phase-duration)) ;; TODO
+                                        :dt 0.1,
+                                        :burn_in_time 0.,
+                                        :phase_duration (float phase-duration)
+                                        :learning_rate 5e-7,
+                                        :weight_recording_interval 1000.0,
+                                        :stdp_burnin 5.0,
+                                        :sim_setup_kwargs {:grng_seed seed
+                                                           :rng_seeds_seed seed}}
+                      :calibration-id #uuid "22f685d0-ea7f-53b5-97d7-c6d6cadc67d3"
+                      :data-id
+                      #_#uuid "0bd17cd8-237b-5ecd-987a-033ca22ea6f1" ;; 2x2 bars
+                      #uuid "0b619370-6716-5ae8-89b6-9c38b4e11e94" ;; 3x3 bars
+                      #_#uuid "18127501-df3c-578d-8863-a3e17f2a61a7" ;; 5x5 digits 3,4,5
+                      #_#uuid "0527b8c6-db13-5275-862e-22a6e940c7e9" ;; strong XOR
+                      :source-path source-path
+                      :args ["srun-log" "python" source-path]}]
+          (try
+            (run-experiment! (partial setup-training! store) params)
+            (catch Exception e
+              (debug "experiment failed: " e)
+              e))))))
 
 
 
@@ -96,7 +130,7 @@
 
   (def base-dirs (map #(str "experiments/" % "/")
                       (let [f (io/file "experiments/")]
-                        (filter #(.contains % "Fri Mar 13 11") (.list f)))))
+                        (filter #(.contains % "Wed Mar 18 15:17") (.list f)))))
 
 
 
@@ -125,11 +159,11 @@
                                            "weight_bio_history.h5"
                                            "bias_theo_history.h5"
                                            "weight_theo_history.h5"
-                                           "dist_joint_sim.h5"
-                                           "train.log"
-                                           #_"srun.log"
+                                           #_"dist_joint_sim.h5"
+                                           #_"train.log"
+                                           "srun.log"
                                            ])
-            res (assoc res :topic "sweep hidden-unit count")
+            res (assoc res :topic "sweep phase duration")
             tparams (-> res :exp-params :training-params)]
         (doseq [b (:new-blobs res)]
           (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train current rbms4"] b)))

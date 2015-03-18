@@ -51,14 +51,14 @@
      :process proc}))
 
 (defn gather-results! [base-directory blob-names]
-  (let [blobs (doall (map #(->> % (str base-directory) slurp-bytes)
+  (let [files (doall (map #(->> % (str base-directory) io/file)
                           blob-names))]
     {:exp-params (read-string (slurp (str base-directory "exp-params.edn")))
      :base-directory base-directory
      :output (into {} (map (fn [n b] [(keyword n)
                                      (uuid b)])
-                           blob-names blobs))
-     :new-blobs blobs}))
+                           blob-names files))
+     :new-blobs files}))
 
 
 (comment

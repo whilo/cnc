@@ -16,8 +16,8 @@
   (timbre/set-config! [:appenders :fs-store] {:doc "Simple file appender."
                                               :min-level nil :enabled? true
                                               :fn (fn [{:keys [ap-config] :as args}]
-                                                    (let [baos (ByteArrayOutputStream.)
-                                                          dos (DataOutputStream. baos)]
+                                                    (with-open [baos (ByteArrayOutputStream.)
+                                                                dos (DataOutputStream. baos)]
                                                       (try
                                                         (nippy/freeze-to-stream! dos (map (fn [a] (if (nippy/freezable? a) a (str a)))
                                                                                           args))
