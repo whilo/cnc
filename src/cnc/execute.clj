@@ -28,12 +28,18 @@
          (re-find #"commit (\S+)")
          second)))
 
-(defn run-experiment! [setup-fn {:keys [args source-path] :as exp-params}]
+(defn create-exp-dir [date]
+  (let [d (str "experiments/" date "_" (subs (str (uuid)) 0 8) "/")]
+    (.mkdir (io/file d))
+    d))
+
+
+(defn run-experiment! [setup-fn {:keys [args source-path base-directory] :as exp-params}]
   (let [date (java.util.Date.)
-        base-directory (str "experiments/" date "_" (subs (str (uuid)) 0 8) "/")
+        base-directory (if-not base-directory (create-exp-dir date)
+                               base-directory)
         git-id (git-commit source-path)
         _ (info "starting experiment in: " base-directory)
-        _ (.mkdir (io/file base-directory))
         _ (spit (str base-directory "exp-params.edn") (merge exp-params
                                                              (when git-id
                                                                {:git-commit-id git-id})))

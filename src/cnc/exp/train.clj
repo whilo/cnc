@@ -1,5 +1,5 @@
 (ns cnc.exp.train
-  (:require [cnc.execute :refer [run-experiment! slurp-bytes write-json git-commit gather-results!]]
+  (:require [cnc.execute :refer [run-experiment! slurp-bytes write-json git-commit gather-results! create-exp-dir]]
             [cnc.eval-map :refer [find-fn]]
             [geschichte.stage :as s]
             [geschichte.realize :as real]
@@ -17,12 +17,13 @@
 
 (defn setup-training! [store base-dir {:keys [training-params
                                               data-id calibration-id
-                                              init-rweights init-biases]}]
+                                              init-rweights init-biases] :as exp-params}]
   (write-json base-dir "training_params.json" training-params)
   (write-json base-dir "init_rweights.json" init-rweights)
   (write-json base-dir "init_biases.json" init-biases)
   (write-json base-dir "calibration.json" (<!? (-get-in store [calibration-id :output])))
-  (write-json base-dir "data.json" (<!? (-bget store data-id #(-> % :input-stream slurp read-string)))))
+  (write-json base-dir "data.json" (<!? (-bget store data-id #(-> % :input-stream slurp read-string))))
+  (assoc exp-params :base-directory base-dir))
 
 (comment
   (do
@@ -32,6 +33,35 @@
     (def stage (get-in @state [:repo :stage]))
     (def store (get-in @state [:repo :store]))
     (def repo-id (get-in @state [:repo :id])))
+
+  (def test-env
+    (setup-training! store (create-exp-dir (java.util.Date.))
+                     {:training-params {:h_count 5,
+                                        :epochs 10 ;; TODO
+                                        :dt 0.1,
+                                        :burn_in_time 0.,
+                                        :phase_duration 2000.0,
+                                        :learning_rate 1e-7,
+                                        ;:bias_learning_rate 0.0,
+                                        :weight_recording_interval 100.0,
+                                        :stdp_burnin 5.0,
+                                        :sim_setup_kwargs {:grng_seed 42
+                                                           :rng_seeds_seed 42}}
+                      :calibration-id #uuid "22f685d0-ea7f-53b5-97d7-c6d6cadc67d3"
+                      :data-id
+                      #_#uuid "0bd17cd8-237b-5ecd-987a-033ca22ea6f1" ;; 2x2 bars
+                      #uuid "0b619370-6716-5ae8-89b6-9c38b4e11e94" ;; 3x3 bars
+                      #_#uuid "18127501-df3c-578d-8863-a3e17f2a61a7" ;; 5x5 digits 3,4,5
+                      #_#uuid "0527b8c6-db13-5275-862e-22a6e940c7e9" ;; strong XOR
+                      }))
+
+  (require '[clojure.java.shell :refer [sh]])
+
+
+  (sh "gnome-terminal"  "ipython"
+      :dir (:base-directory test-env)
+      :env (assoc (into {} (System/getenv))
+             "DISPLAY" "localhost:20.0"))
 
 
   (def curr-exps
@@ -87,7 +117,7 @@
                                         :dt 0.1,
                                         :burn_in_time 0.,
                                         :phase_duration (float phase-duration)
-                                        :learning_rate 5e-7,
+                                        :learning_rate 1e-8,
                                         :weight_recording_interval 100.0,
                                         ;:bias_learning_rate 0.0,
                                         :stdp_burnin 5.0,
