@@ -1,7 +1,7 @@
 (ns cnc.exp.sample
   (:require [cnc.execute :refer [run-experiment! gather-results!]]
             [cnc.eval-map :refer [find-fn]]
-            [geschichte.stage :as s]
+            [replikativ.stage :as s]
             [clojure.java.io :as io]
             [taoensso.timbre :as timber]))
 
@@ -18,7 +18,7 @@
   (do
     (require '[cnc.core :refer [state]]
              '[konserve.protocols :refer [-get-in]]
-             '[geschichte.platform :refer [<!?]]
+             '[replikativ.platform :refer [<!?]]
              '[hasch.core :refer [uuid]])
     (def stage (get-in @state [:repo :stage]))
     (def store (get-in @state [:repo :store]))

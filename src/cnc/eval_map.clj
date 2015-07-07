@@ -350,7 +350,8 @@
   (if (eval-map code)
     (eval-map code)
     (do (debug "eval-map didn't match:" code)
-        (fn [old params]
+        (eval code)
+        #_(fn [old params]
           #_(debug "ignoring params:" params)
           old))))
 

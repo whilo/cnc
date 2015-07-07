@@ -1,8 +1,8 @@
 (ns cnc.exp.lif-sample
   (:require [cnc.execute :refer [run-experiment! write-json slurp-bytes]]
             [cnc.eval-map :refer [find-fn]]
-            [geschichte.stage :as s]
-            [geschichte.platform :refer [<!?]]
+            [replikativ.stage :as s]
+            [replikativ.platform :refer [<!?]]
             [hasch.core :refer [uuid]]
             [konserve.protocols :refer [-exists? -get-in -bget]]
             [clojure.java.io :as io]

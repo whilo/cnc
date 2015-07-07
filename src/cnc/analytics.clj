@@ -4,8 +4,8 @@
             [clojure.set :as set]
             [cnc.eval-map :refer [eval-map mapped-eval]]
             [datomic.api :as d]
-            [geschichte.platform :refer [<!?]]
-            [geschichte.realize :refer [branch-value]]
+            [replikativ.platform :refer [<!?]]
+            [replikativ.crdt.repo.realize :refer [branch-value commit-history]]
             [hasch.core :refer [uuid]]
             [konserve.protocols :refer [-get-in -bget]]
             [taoensso.timbre :as timber]))
@@ -31,27 +31,26 @@
     (drop (/ c 2) elems)))
 
 
-(do
-  (require '[cnc.core :refer [state]]
-           '[konserve.protocols :refer [-get-in -bget -exists?]]
-           '[geschichte.platform :refer [<!?]])
-  (def stage (get-in @state [:repo :stage]))
-  (def store (get-in @state [:repo :store]))
-  (def repo-id (get-in @state [:repo :id])))
 
-(defn conn [branch]
-  (<!? (branch-value store mapped-eval
-                     (get-in @stage ["weilbach@dopamine.kip" repo-id])
-                     branch)))
-
-(defn load-key [& path]
-    (<!? (-get-in store path)))
 
 (comment
+  (def stage (get-in @state [:repo :stage]))
+  (def store (get-in @state [:repo :store]))
+  (def repo-id (get-in @state [:repo :id]))
 
 
   (aprint.core/aprint s/commit-value-cache)
 
+
+
+(defn conn [branch]
+  (<!? (branch-value (get-in @cnc.core/state [:repo :store]) mapped-eval
+                     (get-in @cnc.core/stage ["weilbach@dopamine.kip"
+                                              (get-in @cnc.core/state [:repo :id])])
+                     branch)))
+
+(defn load-key [& path]
+    (<!? (-get-in (get-in @cnc.core/state [:repo :store]) path)))
 
 
 

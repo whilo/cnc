@@ -3,7 +3,7 @@
   :url "http://example.com/FIXME"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.6.0"]
+  :dependencies [[org.clojure/clojure "1.7.0"]
                  ;; TODO remove, wrong dependency order?
                  [clatrix "0.4.0"]
                  [net.mikera/core.matrix "0.32.1"]
@@ -15,9 +15,10 @@
                  [com.taoensso/nippy "2.7.1"]
                  [com.taoensso/timbre "3.3.1"]
                  [gorilla-repl "0.3.4" :exclusions [http-kit]]
+                 [es.topiq/rincanter "1.0.0-SNAPSHOT"]
                  [gg4clj "0.1.0"]
                  [quil "2.2.5"]
 
-                 [net.polyc0l0r/geschichte "0.1.0-SNAPSHOT"]]
+                 [es.topiq/replikativ "0.1.0-SNAPSHOT"]]
   :jvm-opts ["-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n" "-Xmx6g"]
   :main cnc.core)

@@ -1,8 +1,8 @@
 (ns cnc.exp.sample-zero-bias
   (:require [cnc.execute :refer [run-experiment! slurp-bytes write-json]]
             [cnc.eval-map :refer [find-fn]]
-            [geschichte.stage :as s]
-            [geschichte.platform :refer [<!?]]
+            [replikativ.stage :as s]
+            [replikativ.platform :refer [<!?]]
             [konserve.protocols :refer [-exists? -get-in -bget]]
             [hasch.core :refer [uuid]]
             [clojure.core.async :refer [>!!]]
@@ -33,7 +33,7 @@
 (comment
   (require '[cnc.core :refer [state]]
            '[konserve.protocols :refer [-get-in -bget]]
-           '[geschichte.platform :refer [<!?]]
+           '[replikativ.platform :refer [<!?]]
            '[boltzmann.matrix :refer [full-matrix]])
   (def stage (get-in @state [:repo :stage]))
   (def store (get-in @state [:repo :store]))

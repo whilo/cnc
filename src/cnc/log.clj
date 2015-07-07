@@ -3,7 +3,7 @@
             [taoensso.timbre :as timbre]
             [konserve.protocols :refer [-bget -bassoc]]
             [konserve.filestore :refer [new-fs-store]]
-            [geschichte.platform :refer [<!?]])
+            [replikativ.platform :refer [<!?]])
   (:import [java.io DataOutputStream ByteArrayOutputStream]))
 
 (defn setup-logging! []

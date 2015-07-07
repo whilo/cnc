@@ -1,8 +1,8 @@
 (ns cnc.exp.calibrate
   (:require [cnc.eval-map :refer [find-fn]]
             [cnc.execute :refer [run-experiment!]]
-            [geschichte.stage :as s]
-            [geschichte.platform :refer [<!?]]
+            [replikativ.stage :as s]
+            [replikativ.platform :refer [<!?]]
             [hasch.core :refer [uuid]]
             [clojure.core.async :refer [>!!]]
             [clojure.java.io :as io]
@@ -45,7 +45,7 @@
 (comment
   (require '[cnc.core :refer [state]]
            '[konserve.protocols :refer [-get-in]]
-           '[geschichte.platform :refer [<!?]])
+           '[replikativ.platform :refer [<!?]])
   (def stage (get-in @state [:repo :stage]))
   (def store (get-in @state [:repo :store]))
   (def repo-id (get-in @state [:repo :id]))
