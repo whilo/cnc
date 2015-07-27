@@ -3,7 +3,7 @@
             [cnc.eval-map :refer [find-fn]]
             [replikativ.crdt.repo.stage :as s]
             [replikativ.crdt.repo.realize :as real]
-            [replikativ.platform :refer [<!?]]
+            [full.async :refer [<??]]
             [boltzmann.theoretical :as theo]
             [boltzmann.matrix :refer [full-matrix]]
             [incanter.stats :refer [sample-normal]]
@@ -23,8 +23,8 @@
   (write-json base-dir "training_params.json" training-params)
   (write-json base-dir "init_weights.json" weights)
   (write-json base-dir "init_biases.json" biases)
-  (write-json base-dir "calibration.json" (<!? (-get-in store [calibration-id :output])))
-  (write-json base-dir "data.json" (<!? (-bget store data-id #(-> % :input-stream slurp read-string))))
+  (write-json base-dir "calibration.json" (<?? (-get-in store [calibration-id :output])))
+  (write-json base-dir "data.json" (<?? (-bget store data-id #(-> % :input-stream slurp read-string))))
   (assoc exp-params :base-directory base-dir))
 
 (defn theo-lr->bio [lr phase-duration]
@@ -34,7 +34,7 @@
   (do
     (require '[cnc.core :refer [state]]
              '[konserve.protocols :refer [-get-in -bget -exists?]]
-             '[replikativ.platform :refer [<!?]])
+             '[replikativ.platform :refer [<??]])
     (def stage (get-in @state [:repo :stage]))
     (def store (get-in @state [:repo :store]))
     (def repo-id (get-in @state [:repo :id])))
@@ -67,7 +67,7 @@
 
   (require '[clojure.java.shell :refer [sh]])
 
-  (<!? (-get-in store [#uuid "0f38d335-04c9-57db-a487-1d83d4011b08"]))
+  (<?? (-get-in store [#uuid "0f38d335-04c9-57db-a487-1d83d4011b08"]))
 
   (sh "gnome-terminal"  "ipython"
       :dir (:base-directory test-env)
@@ -168,15 +168,15 @@
 
   (clojure.pprint/pprint (dissoc curr-exp :new-blobs :new-values :process))
 
-  (<!? (-get-in store [(uuid (dissoc curr-exp :new-blobs :new-values :process))]))
+  (<?? (-get-in store [(uuid (dissoc curr-exp :new-blobs :new-values :process))]))
 
 
-  (<!? (-get-in store [#uuid "181516fb-226e-5f0b-81b8-09eadddc4f9a"]))
+  (<?? (-get-in store [#uuid "181516fb-226e-5f0b-81b8-09eadddc4f9a"]))
 
   (clojure.pprint/pprint #_(->> test-exp :process :err (take-last 1000) (apply str))
                          (dissoc curr-exp :process :new-blobs))
 
-  (<!? (-get-in store [(uuid {:h_count 12
+  (<?? (-get-in store [(uuid {:h_count 12
                               :epochs 1,
                               :dt 0.01,
                               :burn_in_time 0.,
@@ -226,18 +226,18 @@
             res (assoc res :topic "3x3 fixed fully pre-trained")
             tparams (-> res :exp-params :training-params)]
         (doseq [b (:new-blobs res)]
-          (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train current rbms4"] b)))
+          (<?? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train current rbms4"] b)))
 
-        (when-not (<!? (-exists? store (uuid tparams)))
-          (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms4"]
+        (when-not (<?? (-exists? store (uuid tparams)))
+          (<?? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms4"]
                            (find-fn 'add-training-params)
                            tparams)))
 
-        (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms4"]
+        (<?? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms4"]
                          (find-fn 'train-ev-cd->datoms)
                          (dissoc res :new-blobs)))
         (println "transacted exp: " (uuid (dissoc res :new-blobs))))
-      (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms4"}}}))))
+      (<?? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms4"}}}))))
 
 
   (clojure.pprint/pprint (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches]))
@@ -247,20 +247,20 @@
   (swap! stage update-in ["weilbach@dopamine.kip" repo-id :transactions] assoc "train current rbms" [])
   (keys (get-in @stage ["weilbach@dopamine.kip" repo-id :state]))
 
-  (<!? (-update-in store ["weilbach@dopamine.kip" repo-id] #(dissoc % :state)))
-  (<!? (-assoc-in store ["weilbach@dopamine.kip" repo-id :branches "train current rbms2"] #{#uuid "3cf62813-8e88-5feb-b968-eae428a7f93e"} ))
+  (<?? (-update-in store ["weilbach@dopamine.kip" repo-id] #(dissoc % :state)))
+  (<?? (-assoc-in store ["weilbach@dopamine.kip" repo-id :branches "train current rbms2"] #{#uuid "3cf62813-8e88-5feb-b968-eae428a7f93e"} ))
 
 
-  (<!? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train current rbms5"] digits))
+  (<?? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train current rbms5"] digits))
 
 
 
-  (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms5"}}}))
+  (<?? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms5"}}}))
 
   (clojure.pprint/pprint (-> curr-exp (dissoc :process)))
 
   (def hist
-    (<!? (real/commit-history-values store
+    (<?? (real/commit-history-values store
                                      (get-in @stage ["weilbach@dopamine.kip" repo-id :state :causal-order])
                                      (first (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches "train current rbms5"])))))
 

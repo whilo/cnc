@@ -4,7 +4,7 @@
             [clojure.set :as set]
             [cnc.eval-map :refer [eval-map mapped-eval]]
             [datomic.api :as d]
-            [replikativ.platform :refer [<!?]]
+            [full.async :refer [<??]]
             [replikativ.crdt.repo.realize :refer [branch-value commit-history]]
             [hasch.core :refer [uuid]]
             [konserve.protocols :refer [-get-in -bget]]
@@ -13,7 +13,7 @@
 (timber/refer-timbre)
 
 (defn get-hdf5-tensor [store id path]
-  (let [db (hdf5/open (<!? (-bget store id :file)))
+  (let [db (hdf5/open (<?? (-bget store id :file)))
         m (hdf5/read (hdf5/get-dataset db path))
         _ (hdf5/close db)]
     m))
@@ -44,13 +44,13 @@
 
 
 (defn conn [branch]
-  (<!? (branch-value (get-in @cnc.core/state [:repo :store]) mapped-eval
+  (<?? (branch-value (get-in @cnc.core/state [:repo :store]) mapped-eval
                      (get-in @cnc.core/stage ["weilbach@dopamine.kip"
                                               (get-in @cnc.core/state [:repo :id])])
                      branch)))
 
 (defn load-key [& path]
-    (<!? (-get-in (get-in @cnc.core/state [:repo :store]) path)))
+    (<?? (-get-in (get-in @cnc.core/state [:repo :store]) path)))
 
 
 
@@ -67,7 +67,7 @@
   (clojure.pprint/pprint (seq (d/datoms (d/db conn) :eavt)))
   (clojure.pprint/pprint conn)
 
-  (<!? (-exists? store  #uuid "2976ffdf-5cf4-5188-9dfa-ab1e89752363"))
+  (<?? (-exists? store  #uuid "2976ffdf-5cf4-5188-9dfa-ab1e89752363"))
 
   (->> (d/q '[:find ?cm
               :where
@@ -136,7 +136,7 @@
   (d/delete-database "datomic:mem:///ev-experiments")
 
   (clojure.pprint/pprint
-   (<!? (s/commit-history-values store
+   (<?? (s/commit-history-values store
                                  (get-in @stage ["weilbach@dopamine.kip" repo-id :state :causal-order])
                                  (first (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches "master"]))
                                  )))
@@ -144,11 +144,11 @@
   (get-in @stage [:config :subs])
   (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches])
   (get-in @(get-in @stage [:volatile :peer]) [:meta-sub])
-  (<!? (s/checkout! stage ["weilbach@dopamine.kip" repo-id] "sample"))
+  (<?? (s/checkout! stage ["weilbach@dopamine.kip" repo-id] "sample"))
   (update-in (get-in @stage [:config :subs]) ["weilbach@dopamine.kip" repo-id] conj "sample")
   (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches])
-  (<!? (s/subscribe-repos! stage (update-in (get-in @stage [:config :subs]) ["weilbach@dopamine.kip" repo-id] conj "sample")))
-  (<!? (s/pull! stage ["weilbach@dopamine.kip" repo-id "sample"]
+  (<?? (s/subscribe-repos! stage (update-in (get-in @stage [:config :subs]) ["weilbach@dopamine.kip" repo-id] conj "sample")))
+  (<?? (s/pull! stage ["weilbach@dopamine.kip" repo-id "sample"]
                 "train current rbms" :allow-induced-conflict? true))
 
   (aprint.core/aprint (get-in @stage ["weilbach@dopamine.kip" repo-id]))
@@ -157,11 +157,11 @@
   (def heads '(#uuid "323847ce-67af-5738-b8dc-881d558b076f" #uuid "2dc6068d-4a1c-5911-b1cc-cff5b3d17618"))
 
 
-  (<!? (s/merge! stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
+  (<?? (s/merge! stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
                  heads))
 
   (require '[clj-hdf5.core :as hdf5])
-  (def db (hdf5/open (<!? (-bget store #uuid "0ce9da38-9a10-51eb-ae96-4768b2fa78d6" :file))))
+  (def db (hdf5/open (<?? (-bget store #uuid "0ce9da38-9a10-51eb-ae96-4768b2fa78d6" :file))))
 
   (def weights-history (hdf5/read  (hdf5/get-dataset db "/weights_history")))
   (count weights-history)

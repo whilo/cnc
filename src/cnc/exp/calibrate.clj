@@ -2,7 +2,7 @@
   (:require [cnc.eval-map :refer [find-fn]]
             [cnc.execute :refer [run-experiment!]]
             [replikativ.stage :as s]
-            [replikativ.platform :refer [<!?]]
+            [full.async :refer [<??]]
             [hasch.core :refer [uuid]]
             [clojure.core.async :refer [>!!]]
             [clojure.java.io :as io]
@@ -44,8 +44,7 @@
 
 (comment
   (require '[cnc.core :refer [state]]
-           '[konserve.protocols :refer [-get-in]]
-           '[replikativ.platform :refer [<!?]])
+           '[konserve.protocols :refer [-get-in]])
   (def stage (get-in @state [:repo :stage]))
   (def store (get-in @state [:repo :store]))
   (def repo-id (get-in @state [:repo :id]))
@@ -60,14 +59,14 @@
                           :source-path source-path
                           :args ["srun" "python" source-path]}))))
 
-  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "calibrate"]
+  (<?? (s/transact stage ["weilbach@dopamine.kip" repo-id "calibrate"]
                    (find-fn 'add-neuron-params)
                    neuron-params-curr))
 
 
 
-  (<!? (s/transact stage ["weilbach@dopamine.kip" repo-id "calibrate"]
+  (<?? (s/transact stage ["weilbach@dopamine.kip" repo-id "calibrate"]
                    (find-fn 'calibration->datoms)
                    test-exp))
 
-  (<!? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"calibrate"}}})))
+  (<?? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"calibrate"}}})))
