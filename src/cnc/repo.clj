@@ -79,7 +79,7 @@
 
   (<?? (rs/branch! stage
                   ["weilbach@dopamine.kip" repo-id]
-                  "sample"
+                  "train current rbms"
                   (first (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches "master"]))))
 
   (<?? (-assoc-in store ["schema"] (read-string (slurp "resources/schema.edn"))))

@@ -1,7 +1,7 @@
 (ns cnc.exp.calibrate
   (:require [cnc.eval-map :refer [find-fn]]
             [cnc.execute :refer [run-experiment!]]
-            [replikativ.stage :as s]
+            [replikativ.crdt.repo.stage :as rs]
             [full.async :refer [<??]]
             [hasch.core :refer [uuid]]
             [clojure.core.async :refer [>!!]]
@@ -16,7 +16,7 @@
   (with-open [w (io/writer (str base-directory "neuron_params.json"))]
     (json/generate-stream neuron-params w)))
 
-(defn gather-calibration! [base-directory _]
+(defn gather-calibration! [base-directory]
   {:output (with-open [r (io/reader (str base-directory "calibration.json"))]
              (json/parse-stream r true))})
 
@@ -43,30 +43,33 @@
                          :i_offset   0.})
 
 (comment
-  (require '[cnc.core :refer [state]]
-           '[konserve.protocols :refer [-get-in]])
-  (def stage (get-in @state [:repo :stage]))
-  (def store (get-in @state [:repo :store]))
-  (def repo-id (get-in @state [:repo :id]))
-  (def source-base-path (get-in @state [:config :source-base-path]))
+  (do
+    (require '[cnc.core :refer [state]]
+             '[konserve.protocols :refer [-get-in]])
+    (def stage (get-in @state [:repo :stage]))
+    (def store (get-in @state [:repo :store]))
+    (def repo-id (get-in @state [:repo :id]))
+    (def source-base-path (get-in @state [:config :source-base-path])))
+
+  (gather-calibration! (:base-directory test-exp))
 
   (future
     (let [source-path (str source-base-path "model-nmsampling/code/ev_cd/calibrate.py")]
       (def test-exp
         (run-experiment! setup-calibration!
-                         gather-calibration!
                          {:neuron-params neuron-params-curr
                           :source-path source-path
-                          :args ["srun" "python" source-path]}))))
+                          :exp-name "calibration"
+                          :args ["srun-log" "python" source-path]}))))
 
-  (<?? (s/transact stage ["weilbach@dopamine.kip" repo-id "calibrate"]
-                   (find-fn 'add-neuron-params)
-                   neuron-params-curr))
+  (<?? (rs/transact stage ["weilbach@dopamine.kip" repo-id "calibrate"]
+                    (find-fn 'add-neuron-params)
+                    neuron-params-curr))
 
 
 
-  (<?? (s/transact stage ["weilbach@dopamine.kip" repo-id "calibrate"]
-                   (find-fn 'calibration->datoms)
-                   test-exp))
+  (<?? (rs/transact stage ["weilbach@dopamine.kip" repo-id "calibrate"]
+                    (find-fn 'calibration->datoms)
+                    (gather-calibration! (:base-directory test-exp))))
 
-  (<?? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"calibrate"}}})))
+  (<?? (rs/commit! stage {"weilbach@dopamine.kip" {repo-id #{"calibrate"}}})))
