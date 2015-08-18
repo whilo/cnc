@@ -11,7 +11,7 @@
             [replikativ.p2p.hash :refer [ensure-hash]]
             [replikativ.p2p.block-detector :refer [block-detector]]
             [replikativ.platform :refer [create-http-kit-handler! start]]
-            [clojure.core.async :refer [>!!]]
+            [clojure.core.async :refer [>!! chan]]
             [datomic.api :as d] ;; to read schema file id literals
             ))
 
@@ -19,19 +19,23 @@
 (defn init-repo [config]
   (let [{:keys [user repo branches store remote peer]} config
         store (<?? (new-fs-store store))
+        err-ch (chan)
         peer-server (server-peer (create-http-kit-handler! peer) ;; TODO client-peer?
+                                 "benjamin"
                                  store
+                                 err-ch
                                  (comp (partial block-detector :peer-core)
-                                       (partial fetch store)
+                                       (partial fetch store err-ch)
                                        ensure-hash
                                        (partial block-detector :p2p-surface)))
         #_(client-peer "benjamin"
-                       store
-                       (comp (partial fetch store)
+                       store err-ch
+                       (comp (partial fetch store err-ch)
                              ensure-hash))
-        stage (<?? (s/create-stage! user peer-server eval))
+        stage (<?? (s/create-stage! user peer-server err-ch eval))
         res {:store store
              :peer peer-server
+             :err-ch err-ch
              :stage stage
              :id repo}]
 
@@ -67,20 +71,20 @@
   (clojure.pprint/pprint (<?? (-get-in store [#uuid "059280a0-3682-592b-bac4-99ba12795972"])))
 
   (<?? (rs/transact stage ["weilbach@dopamine.kip" repo-id "master"]
-                   [[(find-fn 'create-db)
-                     {:name "ev-experiments"}]
-                    [(find-fn 'transact-schema)
-                     (-> "resources/schema.edn"
-                         slurp
-                         read-string)]]))
+                    [[(find-fn 'create-db)
+                      {:name "ev-experiments"}]
+                     [(find-fn 'transact-schema)
+                      (-> "resources/schema.edn"
+                          slurp
+                          read-string)]]))
 
   (<?? (rs/commit! stage {"weilbach@dopamine.kip" {repo-id #{"master"}}}))
 
 
   (<?? (rs/branch! stage
-                  ["weilbach@dopamine.kip" repo-id]
-                  "train current rbms"
-                  (first (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches "master"]))))
+                   ["weilbach@dopamine.kip" repo-id]
+                   "train current rbms"
+                   (first (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches "master"]))))
 
   (<?? (-assoc-in store ["schema"] (read-string (slurp "resources/schema.edn"))))
 
