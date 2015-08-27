@@ -72,4 +72,6 @@
                     (find-fn 'calibration->datoms)
                     (gather-calibration! (:base-directory test-exp))))
 
+  #uuid "2033334b-05b8-540f-9b9e-dc936801a6f8"
+
   (<?? (rs/commit! stage {"weilbach@dopamine.kip" {repo-id #{"calibrate"}}})))

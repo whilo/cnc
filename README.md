@@ -7,6 +7,7 @@ Orchestrating simulations on a cluster with versioned data.
 This is intended to be a REPL command and control interface.
 
 ## TODO
+- allow to reconstruct experiment folder
 - find proper way to express eval mapping into current codebase
 
 ## License

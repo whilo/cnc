@@ -5,7 +5,7 @@
             [cnc.eval-map :refer [eval-map mapped-eval]]
             [datomic.api :as d]
             [full.async :refer [<??]]
-            [replikativ.crdt.repo.realize :refer [branch-value commit-history]]
+            [replikativ.crdt.repo.realize :refer [branch-value commit-history commit-history-values]]
             [hasch.core :refer [uuid]]
             [konserve.protocols :refer [-get-in -bget]]
             [taoensso.timbre :as timber]))
@@ -31,6 +31,24 @@
     (drop (/ c 2) elems)))
 
 
+(defn conn [branch]
+  (let [store (get-in @cnc.core/state [:repo :store])
+        stage (get-in @cnc.core/state [:repo :stage])
+        repo-id (get-in @cnc.core/state [:repo :id])]
+    (<?? (branch-value store mapped-eval
+                       (<?? (-get-in store [["weilbach@dopamine.kip" repo-id]]))
+                       branch))))
+
+(defn branch-history-values [branch]
+  (let [store (get-in @cnc.core/state [:repo :store])
+        stage (get-in @cnc.core/state [:repo :stage])
+        repo-id (get-in @cnc.core/state [:repo :id])
+        repo (<?? (-get-in store [["weilbach@dopamine.kip" repo-id]]))]
+    (<?? (commit-history-values store (:commit-graph repo)
+                                (first (get-in repo [:branches branch]))))))
+
+(defn load-key [& path]
+  (<?? (-get-in (get-in @cnc.core/state [:repo :store]) path)))
 
 
 (comment
@@ -41,16 +59,6 @@
 
   (aprint.core/aprint s/commit-value-cache)
 
-
-
-(defn conn [branch]
-  (<?? (branch-value (get-in @cnc.core/state [:repo :store]) mapped-eval
-                     (get-in @cnc.core/stage ["weilbach@dopamine.kip"
-                                              (get-in @cnc.core/state [:repo :id])])
-                     branch)))
-
-(defn load-key [& path]
-    (<?? (-get-in (get-in @cnc.core/state [:repo :store]) path)))
 
 
 

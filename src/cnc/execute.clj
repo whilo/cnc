@@ -37,7 +37,7 @@
 (defn run-experiment! [setup-fn {:keys [args source-path base-directory exp-name] :as exp-params}]
   (when-not exp-name (throw (ex-info "No name defined!" exp-params)))
   (let [date (java.util.Date.)
-        base-directory (if-not base-directory (create-exp-dir exp-name)
+        base-directory (if-not base-directory (create-exp-dir (str exp-name date))
                                base-directory)
         git-id (git-commit source-path)
         _ (info "starting experiment in: " base-directory)

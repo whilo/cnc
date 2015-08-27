@@ -48,10 +48,10 @@
                        {:source-path source-path
                         :args ["srun-log" "python" source-path]
                         :training-params {:h_count 20,
-                                          :epochs 200 ;; TODO
+                                          :epochs 1000 ;; TODO
                                           :dt 0.1,
                                           :burn_in_time 0.,
-                                          :phase_duration 400.0,
+                                          :phase_duration 1000.0,
                                           :learning_rate (theo-lr->bio 0.005 400.0),
                                         ;:bias_learning_rate 0.0,
                                           :weight_recording_interval 100.0,
@@ -79,7 +79,7 @@
   (sh "gnome-terminal"  "ipython"
       :dir (:base-directory test-env)
       :env (assoc (into {} (System/getenv))
-                  "DISPLAY" "localhost:15.0"))
+                  "DISPLAY" "localhost:37.0"))
 
 
   (def curr-exps
@@ -197,11 +197,12 @@
 
   (def base-dirs (map #(str "experiments/" % "/")
                       (let [f (io/file "experiments/")]
-                        (filter #(.contains % "Fri Mar 20") (.list f)))))
+                        (filter #(.contains % "digits_ad4") (.list f)))))
 
 
 
   (clojure.pprint/pprint (mapv #(-> (gather-results! % [
+                                                        "spike_trains.h5"
                                                         "bias_theo_history.h5"
                                                         "weight_theo_history.h5"
                                                         ])
@@ -222,29 +223,28 @@
   ;; TODO protect from committing dangling value uuids
   (doseq [base-dir base-dirs #_(map (comp :base-directory deref) curr-exps)]
     (when base-dir
-      (let [res (gather-results! base-dir ["bias_bio_history.h5"
-                                           "weight_bio_history.h5"
-                                           "bias_theo_history.h5"
+      (let [res (gather-results! base-dir ["bias_theo_history.h5"
                                            "weight_theo_history.h5"
+                                           "spike_trains.h5"
                                            #_"dist_joint_sim.h5"
                                            #_"train.log"
                                            "srun.log"
                                            ])
-            res (assoc res :topic "3x3 fixed fully pre-trained")
+            res (assoc res :topic "5x5 3 digits 3,4,5")
             tparams (-> res :exp-params :training-params)]
         (doseq [b (:new-blobs res)]
-          (<?? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train current rbms4"] b)))
+          (<?? (s/transact-binary stage ["weilbach@dopamine.kip" repo-id "train current rbms"] b)))
 
         (when-not (<?? (-exists? store (uuid tparams)))
-          (<?? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms4"]
+          (<?? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
                            (find-fn 'add-training-params)
                            tparams)))
 
-        (<?? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms4"]
+        (<?? (s/transact stage ["weilbach@dopamine.kip" repo-id "train current rbms"]
                          (find-fn 'train-ev-cd->datoms)
                          (dissoc res :new-blobs)))
         (println "transacted exp: " (uuid (dissoc res :new-blobs))))
-      (<?? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms4"}}}))))
+      (<?? (s/commit! stage {"weilbach@dopamine.kip" {repo-id #{"train current rbms"}}}))))
 
 
   (clojure.pprint/pprint (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches]))
@@ -292,6 +292,7 @@
   (spit "/tmp/digits" digit-data)
   (def digits (slurp-bytes "/tmp/digits"))
 
+  (uuid digits)
 
 
   (spit "/tmp/bars" (str [[1 0 0

@@ -11,7 +11,8 @@
             [replikativ.p2p.hash :refer [ensure-hash]]
             [replikativ.p2p.block-detector :refer [block-detector]]
             [replikativ.platform :refer [create-http-kit-handler! start]]
-            [clojure.core.async :refer [>!! chan]]
+            [replikativ.platform-log :refer [debug]]
+            [clojure.core.async :refer [>!! chan go-loop]]
             [datomic.api :as d] ;; to read schema file id literals
             ))
 
@@ -38,12 +39,19 @@
              :err-ch err-ch
              :stage stage
              :id repo}]
+    (go-loop [e (<! err-ch)]
+      (when e
+        (println "TOP-LEVEL error:" e)
+        (recur (<! e))))
 
     (when-not (= peer :client)
       (start peer-server))
 
     (when remote
-      (<?? (s/connect! stage remote)))
+      (try
+        (<?? (s/connect! stage remote))
+        (catch Throwable e
+          (debug "Initial connection failed: " e))))
 
     (when repo
       (<?? (s/subscribe-repos! stage {user {repo branches}})))
@@ -65,7 +73,7 @@
   ;; initialization steps
   (def new-id (<?? (rs/create-repo! stage :description "ev-cd experiments.")))
 
-  (<?? (s/subscribe-repos! stage {"weilbach@dopamine.kip" {#uuid "64588c27-362f-40d0-9b95-63dc03072033"  #{#_"calibrate" "master" #_"train current rbms5" #_"sample"}}}))
+  (<?? (s/subscribe-repos! stage {"weilbach@dopamine.kip" {#uuid "64588c27-362f-40d0-9b95-63dc03072033"  #{#_"calibrate" "master" #_"train current rbms" #_"sample"}}}))
 
   (clojure.pprint/pprint (<?? (-get-in store [#uuid "214e7e59-8ba0-543a-9ea3-7076bb1f518b"])))
   (clojure.pprint/pprint (<?? (-get-in store [#uuid "059280a0-3682-592b-bac4-99ba12795972"])))
@@ -83,7 +91,7 @@
 
   (<?? (rs/branch! stage
                    ["weilbach@dopamine.kip" repo-id]
-                   "train current rbms"
+                   "sample"
                    (first (get-in @stage ["weilbach@dopamine.kip" repo-id :state :branches "master"]))))
 
   (<?? (-assoc-in store ["schema"] (read-string (slurp "resources/schema.edn"))))
