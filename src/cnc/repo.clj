@@ -12,7 +12,7 @@
             [replikativ.p2p.block-detector :refer [block-detector]]
             [replikativ.platform :refer [create-http-kit-handler! start]]
             [replikativ.platform-log :refer [debug]]
-            [clojure.core.async :refer [>!! chan go-loop]]
+            [clojure.core.async :refer [>!! chan go-loop <!]]
             [datomic.api :as d] ;; to read schema file id literals
             ))
 
