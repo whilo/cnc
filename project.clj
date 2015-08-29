@@ -19,6 +19,6 @@
                  [gg4clj "0.1.0"]
                  [quil "2.2.5"]
 
-                 [es.topiq/replikativ "0.1.0-SNAPSHOT"]]
-  :jvm-opts ["-Xdebug" "-Xrunjdwp:transport=dt_socket,server=y,suspend=n" "-Xmx6g"]
+                 [io.replikativ/replikativ "0.1.0-SNAPSHOT"]]
+  :jvm-opts ["-Xmx2g"]
   :main cnc.core)
