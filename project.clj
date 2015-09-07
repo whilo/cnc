@@ -15,10 +15,10 @@
                  [com.taoensso/nippy "2.7.1"]
                  [com.taoensso/timbre "3.3.1"]
                  [gorilla-repl "0.3.4" :exclusions [http-kit]]
-                 [es.topiq/rincanter "1.0.0-SNAPSHOT"]
+                 #_[es.topiq/rincanter "1.0.0-SNAPSHOT"]
                  [gg4clj "0.1.0"]
                  [quil "2.2.5"]
 
-                 [io.replikativ/replikativ "0.1.0-SNAPSHOT"]]
+                 [io.replikativ/replikativ "0.1.0-beta2"]]
   :jvm-opts ["-Xmx2g"]
   :main cnc.core)

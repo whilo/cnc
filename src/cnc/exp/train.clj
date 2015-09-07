@@ -57,15 +57,16 @@
                          {:source-path source-path
                           :args ["srun-log" "python" source-path]
                           :training-params {:h_count 10,
-                                            :epochs 200 ;; TODO
+                                            :epochs 100 ;; TODO
                                             :dt 0.1,
                                             :burn_in_time 0.,
                                             :phase_duration 100.0,
-                                            :learning_rate_init 2e-6,
+                                            :learning_rate_init 3e-6,
+                                            :learning_rate_schedule "lambda lri, epoch: lri*50/(50+epoch*3)"
                                         ;:bias_learning_rate 0.0,
-                                            :sampling_time 1e6
+                                            :sampling_time 1e5
                                             :weight_recording_interval 100.0,
-                                            :stdp_burnin 20.0,
+                                            :stdp_burnin 10.0,
                                             :sim_setup_kwargs {:grng_seed 42
                                                                :rng_seeds_seed 42}}
 
@@ -208,7 +209,7 @@
 
   (def base-dirs (map #(str "experiments/" % "/")
                       (let [f (io/file "experiments/")]
-                        (filter #(.contains % "digits_Thu_Aug_27_17:40") (.list f)))))
+                        (filter #(.contains % "digits_Fri_Aug_28_17:30") (.list f)))))
 
 
 
