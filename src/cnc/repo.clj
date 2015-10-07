@@ -2,7 +2,7 @@
   (:require [cnc.eval-map :refer [find-fn]]
             [full.async :refer [<??]]
             [hasch.core :refer [uuid]]
-            [konserve.store :refer [new-mem-store]]
+            [konserve.memory :refer [new-mem-store]]
             [konserve.filestore :refer [new-fs-store]]
             [konserve.protocols :refer [-get-in -assoc-in]]
             [replikativ.core :refer [server-peer client-peer]]
@@ -21,7 +21,7 @@
   (let [{:keys [user repo branches store remote peer]} config
         store (<?? (new-fs-store store))
         err-ch (chan)
-        peer-server (server-peer (create-http-kit-handler! peer) ;; TODO client-peer?
+        peer-server (server-peer (create-http-kit-handler! peer err-ch) ;; TODO client-peer?
                                  "benjamin"
                                  store
                                  err-ch
@@ -50,7 +50,7 @@
     (when remote
       (try
         (<?? (s/connect! stage remote))
-        (catch Throwable e
+        (catch Exception e
           (debug "Initial connection failed: " e))))
 
     (when repo
@@ -96,4 +96,4 @@
 
   (<?? (-assoc-in store ["schema"] (read-string (slurp "resources/schema.edn"))))
 
-  (<?? (-get-in store [["weilbach@dopamine.kip" repo-id]])))
+  (type (<?? (-get-in store [["weilbach@dopamine.kip" repo-id]]))))
